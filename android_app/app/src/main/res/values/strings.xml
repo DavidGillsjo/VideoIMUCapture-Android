@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">VideoIMUCapture</string>
+    <string name="toggleRecordingOn">Record</string>
+    <string name="cameraOutputFile_text"></string>
+    <string name="toggleRecordingOff">Stop</string>
+    <string name="tfcCameraParams">Camera params: %1$dx%2$d @%3$.1f fps</string>
+</resources>

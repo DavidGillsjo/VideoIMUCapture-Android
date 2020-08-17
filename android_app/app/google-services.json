@@ -1,0 +1,69 @@
+{
+  "project_info": {
+    "project_number": "941172754299",
+    "firebase_url": "https://sfm-logger.firebaseio.com",
+    "project_id": "sfm-logger",
+    "storage_bucket": "sfm-logger.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:941172754299:android:479e682109dea1b772dfde",
+        "android_client_info": {
+          "package_name": "se.lth.math.marslogger"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "941172754299-vs9fqok51nhn4pbuve6k0d2e0736dovv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjeLM9aXOt758w-WTzfnLX8OxtkErs9mY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "941172754299-vs9fqok51nhn4pbuve6k0d2e0736dovv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:941172754299:android:4f1e32facbd0821e72dfde",
+        "android_client_info": {
+          "package_name": "se.lth.math.videoimucapture"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "941172754299-vs9fqok51nhn4pbuve6k0d2e0736dovv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjeLM9aXOt758w-WTzfnLX8OxtkErs9mY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "941172754299-vs9fqok51nhn4pbuve6k0d2e0736dovv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
