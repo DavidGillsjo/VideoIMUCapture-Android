@@ -20,21 +20,19 @@ import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.OisSample;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.ImageReader;
-import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import androidx.annotation.NonNull;
 
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.util.Log;
 import android.util.Range;
 import android.util.Size;
 import android.util.SizeF;
 import android.view.OrientationEventListener;
 import android.view.Surface;
-import android.view.SurfaceHolder;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -48,11 +46,10 @@ public class Camera2Proxy {
 
     private Activity mActivity;
 
-    private int mCameraId = CameraCharacteristics.LENS_FACING_BACK;
     private String mCameraIdStr = "";
     private Size mPreviewSize;
-    private Size mVideoSize;
     private CameraManager mCameraManager;
+    private CameraSettingsManager mCameraSettingsManager;
     private CameraCharacteristics mCameraCharacteristics;
     private CameraDevice mCameraDevice;
     private CameraCaptureSession mCaptureSession;
@@ -65,19 +62,6 @@ public class Camera2Proxy {
     private ImageReader mImageReader;
     private Surface mPreviewSurface;
     private SurfaceTexture mPreviewSurfaceTexture = null;
-    private OrientationEventListener mOrientationEventListener;
-
-    private int mDisplayRotate = 0;
-    private int mDeviceOrientation = 0;
-    private int mZoom = 1;
-
-    private boolean mOISActive = false;
-    private boolean mOISConfigurable = false;
-    private boolean mOISSampleActive = false;
-    private boolean mOISSampleConfigurable = false;
-    private boolean mDVSActive = false;
-    private boolean mDVSConfigurable = false;
-    private boolean mlogAnalyticsConfigSent = false;
 
     private BufferedWriter mFrameMetadataWriter = null;
 
@@ -139,37 +123,36 @@ public class Camera2Proxy {
     }
 
     @TargetApi(Build.VERSION_CODES.M)
-    public Camera2Proxy(Activity activity) {
+    public Camera2Proxy(Activity activity, CameraSettingsManager cameraSettingsManager) {
         mActivity = activity;
         mCameraManager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
-        mOrientationEventListener = new OrientationEventListener(mActivity) {
-            @Override
-            public void onOrientationChanged(int orientation) {
-                mDeviceOrientation = orientation;
-            }
-        };
+        mCameraSettingsManager = cameraSettingsManager;
     }
 
-    public Size configureCamera(int width, int height) {
+    public Size configureCamera() {
         try {
             mCameraIdStr = CameraUtils.getRearCameraId(mCameraManager);
             mCameraCharacteristics = mCameraManager.getCameraCharacteristics(mCameraIdStr);
 
+            // Update settings to reflect Characteristics
+            mCameraSettingsManager.updateSettings(mCameraCharacteristics);
+
+            Size videoSize = mCameraSettingsManager.getVideoSize();
+
             sensorArraySize = mCameraCharacteristics.get(
                     CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
 
-            StreamConfigurationMap map = mCameraCharacteristics.get(CameraCharacteristics
-                    .SCALER_STREAM_CONFIGURATION_MAP);
-            mVideoSize = CameraUtils.chooseVideoSize(
-                    map.getOutputSizes(MediaRecorder.class), width, height, width);
 
             mFocalLengthHelper.setLensParams(mCameraCharacteristics);
-            mFocalLengthHelper.setmImageSize(mVideoSize);
+            mFocalLengthHelper.setmImageSize(videoSize);
 
+
+            StreamConfigurationMap map = mCameraCharacteristics.get(CameraCharacteristics
+                    .SCALER_STREAM_CONFIGURATION_MAP);
 
             mPreviewSize = CameraUtils.chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
-                    width, height, mVideoSize);
-            Log.d(TAG, "Video size " + mVideoSize.toString() +
+                    videoSize.getWidth(), videoSize.getHeight(), videoSize);
+            Log.d(TAG, "Video size " + videoSize.toString() +
                     " preview size " + mPreviewSize.toString());
 
             logAnalyticsConfig();
@@ -181,12 +164,12 @@ public class Camera2Proxy {
     }
 
     @SuppressLint("MissingPermission")
-    public void openCamera(int width, int height) {
+    public void openCamera() {
         Log.v(TAG, "openCamera");
         startBackgroundThread();
-        mOrientationEventListener.enable();
         if (mCameraIdStr.isEmpty()) {
-            configureCamera(width, height);
+            Log.v(TAG, "openCamera - needs configuring");
+            configureCamera();
         }
         try {
             mCameraManager.openCamera(mCameraIdStr, mStateCallback, mBackgroundHandler);
@@ -194,6 +177,7 @@ public class Camera2Proxy {
             e.printStackTrace();
         }
     }
+
 
     public void releaseCamera() {
         Log.v(TAG, "releaseCamera");
@@ -209,24 +193,10 @@ public class Camera2Proxy {
             mImageReader.close();
             mImageReader = null;
         }
-        mOrientationEventListener.disable();
         mPreviewSurfaceTexture = null;
         mCameraIdStr = "";
         stopRecordingCaptureResult();
         stopBackgroundThread();
-    }
-
-    public void setImageAvailableListener(ImageReader.OnImageAvailableListener
-                                                  onImageAvailableListener) {
-        if (mImageReader == null) {
-            Log.w(TAG, "setImageAvailableListener: mImageReader is null");
-            return;
-        }
-        mImageReader.setOnImageAvailableListener(onImageAvailableListener, null);
-    }
-
-    public void setPreviewSurface(SurfaceHolder holder) {
-        mPreviewSurface = holder.getSurface();
     }
 
     public void setPreviewSurfaceTexture(SurfaceTexture surfaceTexture) {
@@ -311,53 +281,7 @@ public class Camera2Proxy {
                     CaptureRequest.LENS_FOCUS_DISTANCE, minFocusDistance);
             Log.d(TAG, "Focus distance set to its min value:" + minFocusDistance);
 
-            //Disable OIS
-            int[] ois_modes = mCameraCharacteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_OPTICAL_STABILIZATION);
-            mOISConfigurable = (ois_modes != null) && (ois_modes.length > 1);
-            Log.d(TAG, "OIS modes:" + Arrays.toString(ois_modes));
-            if (mOISConfigurable) {
-                mPreviewRequestBuilder.set(
-                        CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON);
-                mOISActive = true; //TODO temporary
-            } else if (ois_modes != null) {
-                mOISActive = (ois_modes[0] == CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON);
-            } else {
-                mOISActive = false;
-            }
-
-            if (Build.VERSION.SDK_INT >= 28) {
-                //Disable OIS Samples
-                int[] oisSampleModes = mCameraCharacteristics.get(CameraCharacteristics.STATISTICS_INFO_AVAILABLE_OIS_DATA_MODES);
-                mOISSampleConfigurable = (oisSampleModes != null) && (oisSampleModes.length > 1);
-                Log.d(TAG, "OIS Sample modes:" + Arrays.toString(oisSampleModes));
-                if (mOISSampleConfigurable) {
-                    mPreviewRequestBuilder.set(
-                            CaptureRequest.STATISTICS_OIS_DATA_MODE, CameraMetadata.STATISTICS_OIS_DATA_MODE_ON);
-                    mOISSampleActive = true;
-                } else if (ois_modes != null) {
-                    mOISSampleActive = (oisSampleModes[0] == CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON);
-                } else {
-                    mOISSampleActive = false;
-                }
-            } else {
-                mOISSampleConfigurable = false;
-                mOISSampleActive = false;
-            }
-
-
-            //Disable DVS
-            int[] dvs_modes = mCameraCharacteristics.get(CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES);
-            mDVSConfigurable = (dvs_modes != null) && (dvs_modes.length > 1);
-            Log.d(TAG, "DVS modes:" + Arrays.toString(dvs_modes));
-            if (mDVSConfigurable) {
-                mPreviewRequestBuilder.set(
-                        CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_OFF);
-                mDVSActive = false;
-            } else if (dvs_modes != null) {
-                mDVSActive = (dvs_modes[0] == CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON);
-            } else {
-                mDVSActive = false;
-            }
+            mCameraSettingsManager.updateRequestBuilder(mPreviewRequestBuilder);
 
             if (mPreviewSurfaceTexture != null && mPreviewSurface == null) { // use texture view
                 mPreviewSurfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(),
@@ -416,12 +340,13 @@ public class Camera2Proxy {
                     mFocalLengthHelper.setmCropRegion(rect);
                     SizeF sz_focal_length = mFocalLengthHelper.getFocalLengthPixel();
 
-                    if (mOISSampleActive) {
+                    if (Build.VERSION.SDK_INT > 28) {
                         OisSample[] oisSamples = result.get(CaptureResult.STATISTICS_OIS_SAMPLES);
-                        Log.d(TAG, "OIS" + Arrays.toString(oisSamples));
+                    } else {
+                        OisSample[] oisSamples = null;
                     }
-                    Log.d(TAG, "Intrinsic" + Arrays.toString(result.get(CaptureResult.LENS_INTRINSIC_CALIBRATION)));
-                    Log.d(TAG, "Lens Pose" + Arrays.toString(result.get(CaptureResult.LENS_POSE_TRANSLATION)));
+                    //Log.d(TAG, "Intrinsic" + Arrays.toString(result.get(CaptureResult.LENS_INTRINSIC_CALIBRATION)));
+                    //Log.d(TAG, "Lens Pose" + Arrays.toString(result.get(CaptureResult.LENS_POSE_TRANSLATION)));
 
                     String delimiter = ",";
                     StringBuilder sb = new StringBuilder();
@@ -443,8 +368,8 @@ public class Camera2Proxy {
                             System.err.println("Error writing captureResult: " + err.getMessage());
                         }
                     }
-                    ((CameraCaptureActivity) mActivity).updateCaptureResultPanel(
-                            sz_focal_length.getWidth(), exposureTimeNs, mOISActive, mDVSActive);
+                    ((CameraCaptureActivity) mActivity).getmCameraCaptureFragment().updateCaptureResultPanel(
+                            sz_focal_length.getWidth(), exposureTimeNs, mCameraSettingsManager.OISEnabled(),  mCameraSettingsManager.DVSEnabled());
                 }
 
                 @Override
@@ -494,7 +419,6 @@ public class Camera2Proxy {
         Log.d(TAG, "logAnalyticsConfig");
         Bundle params = new Bundle();
         params.putString("camera_id", mCameraIdStr);
-        params.putString("video_size", mVideoSize.toString());
         params.putString("manufacturer", Build.MANUFACTURER);
         params.putString("model", Build.MODEL);
         params.putString("sw_version", String.valueOf(Build.VERSION.SDK_INT));

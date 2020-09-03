@@ -4,9 +4,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/info"
+        android:title="@string/info_toolbar"
+        android:icon="@drawable/ic_baseline_info_24"
+        android:onClick="displayInfo"
+        app:showAsAction="ifRoom"/>
+
+    <item
         android:id="@+id/settings"
         android:title="@string/settings_toolbar"
         android:icon="@drawable/ic_gear"
+        android:onClick="navigateToSettings"
         app:showAsAction="always"/>
 
 </menu>

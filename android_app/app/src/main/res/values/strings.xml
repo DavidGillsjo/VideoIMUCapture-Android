@@ -1,11 +1,11 @@
 <resources>
     <string name="app_name">VideoIMUCapture</string>
     <string name="toggleRecordingOn">Record</string>
-    <string name="cameraOutputFile_text"></string>
     <string name="toggleRecordingOff">Stop</string>
     <string name="tfcCameraParams">Camera params: %1$dx%2$d @%3$.1f fps</string>
     <string name="title_activity_settings">SettingsActivity</string>
     <string name="camera_page_title">VideoIMUCapture</string>
+    <string name="settings_page_title">Settings</string>
     <string name="settings_toolbar">Settings</string>
     <string name="back_toolbar">Back</string>
 
@@ -23,4 +23,9 @@
     <string name="attachment_summary_on">Automatically download attachments for incoming emails
     </string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <string name="record_description">Toggle recording</string>
+    <string name="info_toolbar">Information</string>
+    <string name="info_dialog_title">Information</string>
+    <string name="info_dialog_message">Records Video, IMU and Camera Meta Data to this location:\n %s</string>
+    <string name="info_dialog_button">OK</string>
 </resources>

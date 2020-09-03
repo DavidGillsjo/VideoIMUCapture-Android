@@ -29,12 +29,6 @@ public class FocalLengthHelper {
 
     }
 
-    public void setLensParams(CameraCharacteristics result) {
-        setLensParams21(result);
-        setLensParams23(result);
-    }
-
-    @TargetApi(23)
     public void setmCropRegion(Rect mCropRegion) {
         this.mCropRegion = mCropRegion;
     }
@@ -91,8 +85,17 @@ public class FocalLengthHelper {
         return new SizeF(1.0f, 1.0f);
     }
 
-    @TargetApi(23)
-    private void setLensParams23(CameraCharacteristics result) {
+    public void setLensParams(CameraCharacteristics result) {
+        mPhysicalSize = result.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE);
+        if (mPhysicalSize != null)
+            Log.d(TAG, "Physical size " + mPhysicalSize.toString());
+        mPixelArraySize = result.get(CameraCharacteristics.SENSOR_INFO_PIXEL_ARRAY_SIZE);
+        if (mPixelArraySize != null)
+            Log.d(TAG, "Pixel array size " + mPixelArraySize.toString());
+        mActiveSize = result.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+        if (mActiveSize != null)
+            Log.d(TAG, "Active rect " + mActiveSize.toString());
+
         mIntrinsic = result.get(CameraCharacteristics.LENS_INTRINSIC_CALIBRATION);
         if (mIntrinsic != null)
             Log.d(TAG, "char lens intrinsics fx " + mIntrinsic[0] +
@@ -114,16 +117,4 @@ public class FocalLengthHelper {
             Log.d(TAG, "Precorrection rect " + mPreCorrectionSize.toString());
     }
 
-    @TargetApi(21)
-    private void setLensParams21(CameraCharacteristics result) {
-        mPhysicalSize = result.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE);
-        if (mPhysicalSize != null)
-            Log.d(TAG, "Physical size " + mPhysicalSize.toString());
-        mPixelArraySize = result.get(CameraCharacteristics.SENSOR_INFO_PIXEL_ARRAY_SIZE);
-        if (mPixelArraySize != null)
-            Log.d(TAG, "Pixel array size " + mPixelArraySize.toString());
-        mActiveSize = result.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
-        if (mActiveSize != null)
-            Log.d(TAG, "Active rect " + mActiveSize.toString());
-    }
 }

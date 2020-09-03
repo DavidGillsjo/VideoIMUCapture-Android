@@ -1,6 +1,16 @@
 <resources>
-    <style name="Theme.MyApp" parent="Theme.MaterialComponents.DayNight">
-        <!-- ... -->
+    <style name="Theme.MyApp" parent="Theme.MaterialComponents.NoActionBar">
+        <!--<item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryVariant">@color/colorPrimaryVariant</item>
+        <item name="colorSecondary">@color/colorSecondary</item>
+        <item name="colorSecondaryVariant">@color/colorSecondaryVariant</item>-->
+
+        <item name="preferenceTheme">@style/Theme.MyApp.PreferenceThemeOverlay</item>
+    </style>
+
+    <!--  Change PreferenceFragmentCompat Theme to our layout.  -->
+    <style name="Theme.MyApp.PreferenceThemeOverlay" parent="PreferenceThemeOverlay">
+        <item name="android:layout">@layout/settings_activity</item>
     </style>
 
 </resources>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <SwitchPreferenceCompat
+        app:key="ois"
+        app:title="Enable OIS"
+        app:summary="Optical Image Stabilization"
+        app:defaultValue="false"/>
+
+    <SwitchPreferenceCompat
+        app:key="ois_data"
+        app:title="Enable OIS data"
+        app:summary="Capture Optical Image Stabilization data"
+        app:defaultValue="false" />
+
+    <SwitchPreferenceCompat
+        app:key="dvs"
+        app:title="Enable DVS"
+        app:summary="Digital Video Stabilization"
+        app:defaultValue="false"/>
+
+    <ListPreference
+        app:key="video_size"
+        app:title="Video Size"
+        app:useSimpleSummaryProvider="true"/>
+
+
+</PreferenceScreen>
