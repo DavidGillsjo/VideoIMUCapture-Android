@@ -102,16 +102,16 @@ public class TextureMovieEncoder implements Runnable {
         final int mHeight;
         final int mBitRate;
         final EGLContext mEglContext;
-        final String mMetadataFile;
+        final RecordingWriter mMetaRecorder;
 
         public EncoderConfig(String outputFile, int width, int height, int bitRate,
-                             EGLContext sharedEglContext, String metaFile) {
+                             EGLContext sharedEglContext, RecordingWriter metaRecorder) {
             mOutputFile = outputFile;
             mWidth = width;
             mHeight = height;
             mBitRate = bitRate;
             mEglContext = sharedEglContext;
-            mMetadataFile = metaFile;
+            mMetaRecorder = metaRecorder;
         }
 
         @Override
@@ -313,7 +313,7 @@ public class TextureMovieEncoder implements Runnable {
         Log.d(TAG, "handleStartRecording " + config);
         mFrameNum = 0;
         prepareEncoder(config.mEglContext, config.mWidth, config.mHeight, config.mBitRate,
-                config.mOutputFile, config.mMetadataFile);
+                config.mOutputFile, config.mMetaRecorder);
     }
 
     /**
@@ -387,10 +387,10 @@ public class TextureMovieEncoder implements Runnable {
     }
 
     private void prepareEncoder(EGLContext sharedContext, int width, int height, int bitRate,
-                                String outputFile, String metaFile) {
+                                String outputFile, RecordingWriter metaRecorder) {
         try {
             mVideoEncoder = new VideoEncoderCore(
-                    width, height, bitRate, outputFile, metaFile);
+                    width, height, bitRate, outputFile, metaRecorder);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }

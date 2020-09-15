@@ -30,15 +30,12 @@ import androidx.preference.PreferenceManager;
 import android.util.Log;
 import android.util.Range;
 import android.util.Size;
-import android.util.SizeF;
-import android.view.OrientationEventListener;
 import android.view.Surface;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import static java.lang.Math.abs;
 
 public class Camera2Proxy {
 
@@ -63,7 +60,7 @@ public class Camera2Proxy {
     private Surface mPreviewSurface;
     private SurfaceTexture mPreviewSurfaceTexture = null;
 
-    private BufferedWriter mFrameMetadataWriter = null;
+    private RecordingWriter mRecordingWriter = null;
 
     // https://stackoverflow.com/questions/3786825/volatile-boolean-vs-atomicboolean
     private volatile boolean mRecordingMetadata = false;
@@ -91,34 +88,15 @@ public class Camera2Proxy {
         }
     };
 
-    public void startRecordingCaptureResult(String captureResultFile) {
-        try {
-            mFrameMetadataWriter = new BufferedWriter(
-                    new FileWriter(captureResultFile, false));
-            String header = "Timestamp[nanosec],fx[px],fy[px],Frame No.," +
-                    "Exposure time[nanosec],Sensor frame duration[nanosec]," +
-                    "Frame readout time[nanosec]," +
-                    "ISO,Focal length,Focus distance,OIS";
-
-            mFrameMetadataWriter.write(header + "\n");
-            mRecordingMetadata = true;
-        } catch (IOException err) {
-            System.err.println("IOException in opening frameMetadataWriter at "
-                    + captureResultFile + ":" + err.getMessage());
-        }
+    public void startRecordingCaptureResult(RecordingWriter recordingWriter) {
+        mRecordingWriter = recordingWriter;
+        mRecordingMetadata = true;
+        writeCameraInfo();
     }
 
     public void stopRecordingCaptureResult() {
         if (mRecordingMetadata) {
             mRecordingMetadata = false;
-            try {
-                mFrameMetadataWriter.flush();
-                mFrameMetadataWriter.close();
-            } catch (IOException err) {
-                System.err.println("IOException in closing frameMetadataWriter: " +
-                        err.getMessage());
-            }
-            mFrameMetadataWriter = null;
         }
     }
 
@@ -273,13 +251,9 @@ public class Camera2Proxy {
             // fix focus distance
             mPreviewRequestBuilder.set(
                     CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_OFF);
-            Float minFocusDistance = mCameraCharacteristics.get(
-                    CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
-            if (minFocusDistance == null)
-                minFocusDistance = 5.0f;
             mPreviewRequestBuilder.set(
-                    CaptureRequest.LENS_FOCUS_DISTANCE, minFocusDistance);
-            Log.d(TAG, "Focus distance set to its min value:" + minFocusDistance);
+                    CaptureRequest.LENS_FOCUS_DISTANCE, 0.0f);
+            Log.d(TAG, "Focus distance set to Infinity");
 
             mCameraSettingsManager.updateRequestBuilder(mPreviewRequestBuilder);
 
@@ -309,6 +283,41 @@ public class Camera2Proxy {
         }
     }
 
+    public void writeCameraInfo() {
+
+        RecordingProtos.CameraInfo.Builder metaBuilder = RecordingProtos.CameraInfo.newBuilder()
+                .setOpticalImageStabilization(mCameraSettingsManager.OISEnabled())
+                .setVideoStabilization(mCameraSettingsManager.DVSEnabled());
+
+        Integer timestamp_source = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE);
+        if (timestamp_source != null) {
+            metaBuilder.setTimestampSourceValue(timestamp_source);
+        }
+
+        Integer focus_cal = mCameraCharacteristics.get(CameraCharacteristics.LENS_INFO_FOCUS_DISTANCE_CALIBRATION);
+        if (focus_cal != null) {
+            metaBuilder.setFocusCalibrationValue(focus_cal);
+        }
+
+        float[] intrinsics = mCameraCharacteristics.get(CameraCharacteristics.LENS_INTRINSIC_CALIBRATION);
+        if ((intrinsics != null) && (abs(intrinsics[0]) > 0)) {
+            for (float e : intrinsics) {
+                metaBuilder.addIntrinsicParams(e);
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= 28) {
+            float[] distortion = mCameraCharacteristics.get(CameraCharacteristics.LENS_DISTORTION);
+            if ((distortion != null) && (abs(distortion[0]) > 0)) {
+                for (float e : distortion) {
+                    metaBuilder.addDistortionParams(e);
+                }
+            }
+        }
+        mRecordingWriter.queueData(metaBuilder.build());
+
+    }
+
 
     private CameraCaptureSession.CaptureCallback mSessionCaptureCallback =
             new CameraCaptureSession.CaptureCallback() {
@@ -318,12 +327,23 @@ public class Camera2Proxy {
                 public void onCaptureCompleted(CameraCaptureSession session,
                                                CaptureRequest request,
                                                TotalCaptureResult result) {
-                    Long timestamp = result.get(CaptureResult.SENSOR_TIMESTAMP);
+
+                    if (result.get(CaptureResult.CONTROL_AF_STATE) != CameraMetadata.CONTROL_AF_STATE_INACTIVE) {
+                        // Auto focus has been triggered, reset trigger.
+                        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+                                CaptureRequest.CONTROL_AF_TRIGGER_IDLE);
+                        try {
+                            mCaptureSession.setRepeatingRequest(
+                                    mPreviewRequestBuilder.build(), mSessionCaptureCallback, mBackgroundHandler);
+                        } catch (CameraAccessException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+
+
                     Long number = result.getFrameNumber();
                     Long exposureTimeNs = result.get(CaptureResult.SENSOR_EXPOSURE_TIME);
-
-                    Long frmDurationNs = result.get(CaptureResult.SENSOR_FRAME_DURATION);
-                    Long frmReadoutNs = result.get(CaptureResult.SENSOR_ROLLING_SHUTTER_SKEW);
                     Integer iso = result.get(CaptureResult.SENSOR_SENSITIVITY);
                     if (expoStats.size() > kMaxExpoSamples) {
                         expoStats.subList(0, kMaxExpoSamples / 2).clear();
@@ -338,38 +358,13 @@ public class Camera2Proxy {
                     mFocalLengthHelper.setmFocalLength(fl);
                     mFocalLengthHelper.setmFocusDistance(fd);
                     mFocalLengthHelper.setmCropRegion(rect);
-                    SizeF sz_focal_length = mFocalLengthHelper.getFocalLengthPixel();
+                    Float focal_length_pix = mFocalLengthHelper.getFocalLengthPixel();
 
-                    if (Build.VERSION.SDK_INT > 28) {
-                        OisSample[] oisSamples = result.get(CaptureResult.STATISTICS_OIS_SAMPLES);
-                    } else {
-                        OisSample[] oisSamples = null;
-                    }
-                    //Log.d(TAG, "Intrinsic" + Arrays.toString(result.get(CaptureResult.LENS_INTRINSIC_CALIBRATION)));
-                    //Log.d(TAG, "Lens Pose" + Arrays.toString(result.get(CaptureResult.LENS_POSE_TRANSLATION)));
-
-                    String delimiter = ",";
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(timestamp);
-                    sb.append(delimiter + sz_focal_length.getWidth());
-                    sb.append(delimiter + sz_focal_length.getHeight());
-                    sb.append(delimiter + number);
-                    sb.append(delimiter + exposureTimeNs);
-                    sb.append(delimiter + frmDurationNs);
-                    sb.append(delimiter + frmReadoutNs);
-                    sb.append(delimiter + iso);
-                    sb.append(delimiter + fl);
-                    sb.append(delimiter + fd);
-                    String frame_info = sb.toString();
                     if (mRecordingMetadata) {
-                        try {
-                            mFrameMetadataWriter.write(frame_info + "\n");
-                        } catch (IOException err) {
-                            System.err.println("Error writing captureResult: " + err.getMessage());
-                        }
+                        writeCaptureData(result, focal_length_pix);
                     }
                     ((CameraCaptureActivity) mActivity).getmCameraCaptureFragment().updateCaptureResultPanel(
-                            sz_focal_length.getWidth(), exposureTimeNs, mCameraSettingsManager.OISEnabled(),  mCameraSettingsManager.DVSEnabled());
+                            focal_length_pix, exposureTimeNs, mCameraSettingsManager.OISEnabled(),  mCameraSettingsManager.DVSEnabled());
                 }
 
                 @Override
@@ -378,6 +373,35 @@ public class Camera2Proxy {
 //                    Log.d(TAG, "mSessionCaptureCallback,  onCaptureProgressed");
                 }
             };
+
+    private void writeCaptureData(CaptureResult result, Float focal_length_pix) {
+        RecordingProtos.VideoFrameMetaData.Builder frameBuilder = RecordingProtos.VideoFrameMetaData.newBuilder()
+                .setTimeNs(result.get(CaptureResult.SENSOR_TIMESTAMP))
+                .setExposureTimeNs(result.get(CaptureResult.SENSOR_EXPOSURE_TIME))
+                .setFrameDurationNs(result.get(CaptureResult.SENSOR_FRAME_DURATION))
+                .setFrameReadoutNs(result.get(CaptureResult.SENSOR_ROLLING_SHUTTER_SKEW))
+                .setIso(result.get(CaptureResult.SENSOR_SENSITIVITY))
+                .setFocalLengthMm(result.get(CaptureResult.LENS_FOCAL_LENGTH))
+                .setFocusDistanceDiopters(result.get(CaptureResult.LENS_FOCUS_DISTANCE))
+                .setEstFocalLengthPix(focal_length_pix);
+
+        if (Build.VERSION.SDK_INT > 28) {
+            OisSample[] oisSamples = result.get(CaptureResult.STATISTICS_OIS_SAMPLES);
+            if (oisSamples != null) {
+                for (OisSample sample : oisSamples) {
+                    RecordingProtos.VideoFrameMetaData.OISSample.Builder oisBuilder =
+                            RecordingProtos.VideoFrameMetaData.OISSample.newBuilder()
+                                    .setTimeNs(sample.getTimestamp())
+                                    .setXShift(sample.getXshift())
+                                    .setYShift(sample.getYshift());
+                    frameBuilder.addOISSamples(oisBuilder);
+                }
+            }
+        }
+
+        mRecordingWriter.queueData(frameBuilder.build());
+
+    }
 
 
     public void startPreview() {

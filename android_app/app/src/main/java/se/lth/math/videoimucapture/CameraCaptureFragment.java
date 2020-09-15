@@ -25,6 +25,7 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -56,6 +57,9 @@ public class CameraCaptureFragment extends Fragment
     };
     private TextureMovieEncoder getsVideoEncoder() {
         return ((CameraCaptureActivity) getActivity()).getsVideoEncoder();
+    };
+    private RecordingWriter getsRecordingWriter() {
+        return ((CameraCaptureActivity) getActivity()).getsRecordingWriter();
     };
     private IMUManager getmImuManager() {
         return ((CameraCaptureActivity) getActivity()).getmImuManager();
@@ -166,6 +170,7 @@ public class CameraCaptureFragment extends Fragment
     @Override
     public void onPause() {
         super.onPause();
+
         ((CameraCaptureActivity) getActivity()).releaseCamera();
         Log.d(TAG, "onPause -- Pause Camera preview");
         mGLView.queueEvent(new Runnable() {
@@ -183,12 +188,11 @@ public class CameraCaptureFragment extends Fragment
             }
         });
         mGLView.onPause();
-    }
 
-    @Override
-    public void onDestroyView() {
-        Log.d(TAG, "onDestroyView");
-        super.onDestroyView();
+        if (mRecordingEnabled) {
+            mRecordingEnabled = false;
+            stopRecording();
+        }
 
     }
 
@@ -197,36 +201,58 @@ public class CameraCaptureFragment extends Fragment
      */
     public void clickToggleRecording(@SuppressWarnings("unused") View unused) {
         mRecordingEnabled = !mRecordingEnabled;
-        Camera2Proxy camera2Proxy = getmCamera2Proxy();
         if (mRecordingEnabled) {
-            String outputDir = renewOutputDir();
-            String outputFile = outputDir + File.separator + "movie.mp4";
-            String metaFile = outputDir + File.separator + "frame_timestamps.txt";
-            mRenderer.resetOutputFiles(outputFile, metaFile); // this will not cause sync issues
-            String inertialFile = outputDir + File.separator + "gyro_accel.csv";
-            getmImuManager().startRecording(inertialFile);
-
-            if (camera2Proxy != null) {
-                camera2Proxy.startRecordingCaptureResult(
-                        outputDir + File.separator + "movie_metadata.csv");
-            } else {
-                throw new RuntimeException("mCamera2Proxy should not be null upon toggling record button");
-            }
-
+            startRecording();
         } else {
-            if (camera2Proxy != null) {
-                camera2Proxy.stopRecordingCaptureResult();
-            }
-            getmImuManager().stopRecording();
+            stopRecording();
+        }
+        updateControls();
+    }
+
+    private void startRecording() {
+        Camera2Proxy camera2Proxy = getmCamera2Proxy();
+        String outputDir = renewOutputDir();
+        String outputFile = outputDir + File.separator + "video_recording.mp4";
+        String metaFile = outputDir + File.separator + "video_meta.pb3";
+        RecordingWriter recordingWriter = getsRecordingWriter();
+        try {
+            recordingWriter.startRecording(metaFile);
+        } catch (IOException e) {
+            throw new RuntimeException("Could not start meta data recording:" + e);
+        }
+
+        mRenderer.resetOutputFiles(outputFile, recordingWriter); // this will not cause sync issues
+        getmImuManager().startRecording(recordingWriter);
+
+        if (camera2Proxy != null) {
+            camera2Proxy.startRecordingCaptureResult(recordingWriter);
+        } else {
+            throw new RuntimeException("mCamera2Proxy should not be null upon toggling record button");
         }
         mGLView.queueEvent(new Runnable() {
             @Override
             public void run() {
                 // notify the renderer that we want to change the encoder's state
-                mRenderer.changeRecordingState(mRecordingEnabled);
+                mRenderer.changeRecordingState(true);
             }
         });
-        updateControls();
+    }
+
+    private void stopRecording() {
+        Camera2Proxy camera2Proxy = getmCamera2Proxy();
+        if (camera2Proxy != null) {
+            camera2Proxy.stopRecordingCaptureResult();
+        }
+        getmImuManager().stopRecording();
+
+        mGLView.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                // notify the renderer that we want to change the encoder's state
+                mRenderer.changeRecordingState(false);
+            }
+        });
+        getsRecordingWriter().stopRecording();
     }
 
 
@@ -333,7 +359,7 @@ class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
     private CameraCaptureActivity.CameraHandler mCameraHandler;
     private TextureMovieEncoder mVideoEncoder;
     private String mOutputFile;
-    private String mMetadataFile;
+    private RecordingWriter mMetadataRecorder;
 
     private FullFrameRect mFullScreen;
 
@@ -372,9 +398,9 @@ class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
         mIncomingWidth = mIncomingHeight = -1;
     }
 
-    public void resetOutputFiles(String outputFile, String metaFile) {
+    public void resetOutputFiles(String outputFile, RecordingWriter metaRecorder) {
         mOutputFile = outputFile;
-        mMetadataFile = metaFile;
+        mMetadataRecorder = metaRecorder;
     }
 
     /**
@@ -409,6 +435,8 @@ class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
     public void changeRecordingState(boolean isRecording) {
         Log.d(TAG, "changeRecordingState: was " + mRecordingEnabled + " now " + isRecording);
         mRecordingEnabled = isRecording;
+        //Extra state update, in case no frame comes. May happen when recording stops.
+        updateState();
     }
 
     /**
@@ -474,50 +502,7 @@ class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
         // If the recording state is changing, take care of it here.  Ideally we wouldn't
         // be doing all this in onDrawFrame(), but the EGLContext sharing with GLSurfaceView
         // makes it hard to do elsewhere.
-        if (mRecordingEnabled) {
-            switch (mRecordingStatus) {
-                case RECORDING_OFF:
-                    Log.d(TAG, "START recording");
-                    // TODO(jhuai): why does the height and width have to be swapped here?
-                    mVideoEncoder.startRecording(
-                            new TextureMovieEncoder.EncoderConfig(
-                                    mOutputFile,
-                                    mIncomingHeight,
-                                    mIncomingWidth,
-                                    CameraUtils.calcBitRate(mIncomingWidth,
-                                            mIncomingHeight,
-                                            VideoEncoderCore.FRAME_RATE),
-                                    EGL14.eglGetCurrentContext(),
-                                    mMetadataFile));
-                    mRecordingStatus = RECORDING_ON;
-                    break;
-                case RECORDING_RESUMED:
-                    Log.d(TAG, "RESUME recording");
-                    mVideoEncoder.updateSharedContext(EGL14.eglGetCurrentContext());
-                    mRecordingStatus = RECORDING_ON;
-                    break;
-                case RECORDING_ON:
-                    // yay
-                    break;
-                default:
-                    throw new RuntimeException("unknown status " + mRecordingStatus);
-            }
-        } else {
-            switch (mRecordingStatus) {
-                case RECORDING_ON:
-                case RECORDING_RESUMED:
-                    // stop recording
-                    Log.d(TAG, "STOP recording");
-                    mVideoEncoder.stopRecording();
-                    mRecordingStatus = RECORDING_OFF;
-                    break;
-                case RECORDING_OFF:
-                    // yay
-                    break;
-                default:
-                    throw new RuntimeException("unknown status " + mRecordingStatus);
-            }
-        }
+        updateState();
 
         // Set the video encoder's texture name.  We only need to do this once, but in the
         // current implementation it has to happen after the video encoder is started, so
@@ -551,6 +536,53 @@ class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
         showBox = (mRecordingStatus == RECORDING_ON);
         if (showBox && (++mFrameCount & 0x04) == 0) {
             drawBox();
+        }
+    }
+
+    void updateState() {
+        if (mRecordingEnabled) {
+            switch (mRecordingStatus) {
+                case RECORDING_OFF:
+                    Log.d(TAG, "START recording");
+                    // TODO(jhuai): why does the height and width have to be swapped here?
+                    mVideoEncoder.startRecording(
+                            new TextureMovieEncoder.EncoderConfig(
+                                    mOutputFile,
+                                    mIncomingHeight,
+                                    mIncomingWidth,
+                                    CameraUtils.calcBitRate(mIncomingWidth,
+                                            mIncomingHeight,
+                                            VideoEncoderCore.FRAME_RATE),
+                                    EGL14.eglGetCurrentContext(),
+                                    mMetadataRecorder));
+                    mRecordingStatus = RECORDING_ON;
+                    break;
+                case RECORDING_RESUMED:
+                    Log.d(TAG, "RESUME recording");
+                    mVideoEncoder.updateSharedContext(EGL14.eglGetCurrentContext());
+                    mRecordingStatus = RECORDING_ON;
+                    break;
+                case RECORDING_ON:
+                    // yay
+                    break;
+                default:
+                    throw new RuntimeException("unknown status " + mRecordingStatus);
+            }
+        } else {
+            switch (mRecordingStatus) {
+                case RECORDING_ON:
+                case RECORDING_RESUMED:
+                    // stop recording
+                    Log.d(TAG, "STOP recording");
+                    mVideoEncoder.stopRecording();
+                    mRecordingStatus = RECORDING_OFF;
+                    break;
+                case RECORDING_OFF:
+                    // yay
+                    break;
+                default:
+                    throw new RuntimeException("unknown status " + mRecordingStatus);
+            }
         }
     }
 

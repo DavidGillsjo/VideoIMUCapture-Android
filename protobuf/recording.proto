@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package videoimu;
+
+option java_package = "se.lth.math.videoimucapture";
+option java_outer_classname = "RecordingProtos";
+
+message CameraInfo {
+  //fx, fy, cx, cy, s
+  repeated float intrinsic_params = 1;
+  //Radial: k1,k2,k3, Tangential: k4,k5
+  repeated float distortion_params = 2;
+  bool optical_image_stabilization = 3;
+  bool video_stabilization = 4;
+
+  enum FocusCalibration {
+    UNCALIBRATED = 0;
+    APPROXIMATE = 1;
+    CALIBRATED = 2;
+  }
+  FocusCalibration focus_calibration = 5;
+
+  enum TimestampSource {
+    UNKNOWN = 0;
+    REALTIME = 1;
+  }
+  TimestampSource timestamp_source = 6;
+
+}
+
+message VideoFrameToTimestamp{
+  int64 time_us = 1;
+  int64 frame_nbr = 2;
+}
+
+message VideoFrameMetaData {
+  int64 time_ns = 1;
+  int64 frame_number = 2;
+  int64 exposure_time_ns = 3;
+  int64 frame_duration_ns = 4;
+  int64 frame_readout_ns = 5;
+  int32 iso = 6;
+  float focal_length_mm = 7;
+  float est_focal_length_pix = 8;
+  float focus_distance_diopters = 9;
+
+  message OISSample {
+    int64 time_ns = 1;
+    float x_shift = 2;
+    float y_shift = 3;
+  }
+  repeated OISSample OIS_samples =10;
+}
+
+message IMUInfo {
+
+}
+
+message IMUData {
+  int64 time_ns = 1;
+  repeated float gyro = 2;
+  repeated float gyro_drift = 3;
+  repeated float accel = 4;
+  repeated float accel_bias = 5;
+  enum Accuracy {
+    UNRELIABLE=0;
+    LOW = 1;
+    MEDIUM = 2;
+    HIGH = 3;
+  }
+  Accuracy gyro_accuracy = 6;
+  Accuracy accel_accuracy = 7;
+
+}
+
+message VideoCaptureData {
+  google.protobuf.Timestamp time = 1;
+  CameraInfo camera_meta = 2;
+  IMUInfo imu_meta = 3;
+
+  repeated IMUData imu= 4;
+  repeated VideoFrameMetaData video_meta = 5;
+
+}
+
+message MessageWrapper {
+  oneof msg {
+    CameraInfo camera_meta = 1;
+    IMUData imu_data = 2;
+    IMUInfo imu_meta = 3;
+    VideoFrameMetaData frame_meta = 4;
+    VideoFrameToTimestamp frame_time = 5;
+  }
+}

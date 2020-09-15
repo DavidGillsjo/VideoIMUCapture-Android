@@ -130,6 +130,7 @@ public class CameraCaptureActivity extends AppCompatActivity {
     // this is static so it survives activity restarts
     private static TextureMovieEncoder sVideoEncoder = new TextureMovieEncoder();
     private static IMUManager mImuManager;
+    private static RecordingWriter sRecordingWriter = new RecordingWriter();
 
     public CameraSettingsManager getmCameraSettingsManager() {
         return mCameraSettingsManager;
@@ -139,6 +140,9 @@ public class CameraCaptureActivity extends AppCompatActivity {
     }
     public TextureMovieEncoder getsVideoEncoder() {
         return sVideoEncoder;
+    }
+    public RecordingWriter getsRecordingWriter() {
+        return sRecordingWriter;
     }
     public CameraHandler getmCameraHandler() {
         return mCameraHandler;

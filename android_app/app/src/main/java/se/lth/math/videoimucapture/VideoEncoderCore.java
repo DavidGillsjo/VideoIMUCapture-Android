@@ -23,11 +23,8 @@ import android.media.MediaMuxer;
 import android.util.Log;
 import android.view.Surface;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 
 /**
  * This class wraps up the core components used for surface-input video encoding.
@@ -54,14 +51,14 @@ public class VideoEncoderCore {
     private MediaCodec.BufferInfo mBufferInfo;
     private int mTrackIndex;
     private boolean mMuxerStarted;
-    private BufferedWriter mFrameMetadataWriter = null;
-    private ArrayList<Long> mTimeArray = null;
+    private RecordingWriter mFrameMetadataRecorder = null;
+    private long mFrameNbr = 0;
 
     /**
      * Configures encoder and muxer state, and prepares the input Surface.
      */
     public VideoEncoderCore(int width, int height, int bitRate,
-                            String outputFile, String metaFile)
+                            String outputFile, RecordingWriter metaRecorder)
             throws IOException {
         mBufferInfo = new MediaCodec.BufferInfo();
 
@@ -94,14 +91,7 @@ public class VideoEncoderCore {
 
         mTrackIndex = -1;
         mMuxerStarted = false;
-
-        try {
-            mFrameMetadataWriter = new BufferedWriter(
-                    new FileWriter(metaFile, false));
-        } catch (IOException err) {
-            System.err.println("IOException in opening frameMetadataWriter: " + err.getMessage());
-        }
-        mTimeArray = new ArrayList<>();
+        mFrameMetadataRecorder = metaRecorder;
     }
 
     /**
@@ -128,19 +118,7 @@ public class VideoEncoderCore {
             mMuxer.release();
             mMuxer = null;
         }
-        if (mFrameMetadataWriter != null) {
-            try {
-                mFrameMetadataWriter.write("Frame timestamp[nanosec]\n");
-                for (Long value : mTimeArray) {
-                    mFrameMetadataWriter.write(value.toString() + "000\n");
-                }
-                mFrameMetadataWriter.flush();
-                mFrameMetadataWriter.close();
-            } catch (IOException err) {
-                System.err.println("IOException in closing frameMetadataWriter: " + err.getMessage());
-            }
-            mFrameMetadataWriter = null;
-        }
+
     }
 
     /**
@@ -213,7 +191,7 @@ public class VideoEncoderCore {
                     // adjust the ByteBuffer values to match BufferInfo (not needed?)
                     encodedData.position(mBufferInfo.offset);
                     encodedData.limit(mBufferInfo.offset + mBufferInfo.size);
-                    mTimeArray.add(mBufferInfo.presentationTimeUs);
+                    writeMetadata(mFrameNbr++, mBufferInfo.presentationTimeUs);
                     mMuxer.writeSampleData(mTrackIndex, encodedData, mBufferInfo);
                     if (VERBOSE) {
                         Log.d(TAG, "sent " + mBufferInfo.size + " bytes to muxer, ts=" +
@@ -233,5 +211,11 @@ public class VideoEncoderCore {
                 }
             }
         }
+    }
+    private void writeMetadata(long frameNbr, long timestamp) {
+        RecordingProtos.VideoFrameToTimestamp.Builder metaBuilder = RecordingProtos.VideoFrameToTimestamp.newBuilder()
+                .setFrameNbr(frameNbr)
+                .setTimeUs(timestamp);
+        mFrameMetadataRecorder.queueData(metaBuilder.build());
     }
 }

@@ -3,7 +3,6 @@ package se.lth.math.videoimucapture;
 // estimate focal length, i.e., imaging distance in pixels, using all sorts of info
 // TODO(jhuai): set default imaging distance using empirical data, see colmap
 
-import android.annotation.TargetApi;
 import android.graphics.Rect;
 import android.hardware.camera2.CameraCharacteristics;
 import android.util.Log;
@@ -52,37 +51,32 @@ public class FocalLengthHelper {
     // i is often very close to the physical focal length
     // ref: https://source.android.com/devices/camera/camera3_crop_reprocess.html
     // https://stackoverflow.com/questions/39965408/what-is-the-android-camera2-api-equivalent-of-camera-parameters-gethorizontalvie
-    public SizeF getFocalLengthPixel() {
-        if (mIntrinsic != null && mIntrinsic[0] > 1.0) {
-            Log.d(TAG, "Focal length set as (" + mIntrinsic[0] + ", " + mIntrinsic[1]);
-            return new SizeF(mIntrinsic[0], mIntrinsic[1]);
-        }
-
+    public Float getFocalLengthPixel() {
         if (mFocalLength != null) {
-            Float imageDistance; // mm
+            float imageDistance; // mm
             if (mFocusDistance == null || mFocusDistance == 0.f) {
                 imageDistance = mFocalLength;
             } else {
                 imageDistance = 1000.f / (1000.f / mFocalLength - mFocusDistance);
             }
             // ignore the effect of distortion on the active array coordinates
-            Float crop_aspect = (float) mCropRegion.width() /
+            float crop_aspect = (float) mCropRegion.width() /
                     ((float) mCropRegion.height());
-            Float image_aspect = (float) mImageSize.getWidth() /
+            float image_aspect = (float) mImageSize.getWidth() /
                     ((float) mImageSize.getHeight());
-            Float f_image_pixel;
+            float f_image_pixel;
             if (image_aspect >= crop_aspect) {
-                Float scale = (float) mImageSize.getWidth() / ((float) mCropRegion.width());
+                float scale = (float) mImageSize.getWidth() / ((float) mCropRegion.width());
                 f_image_pixel = scale * imageDistance * mPixelArraySize.getWidth() /
                         mPhysicalSize.getWidth();
             } else {
-                Float scale = (float) mImageSize.getHeight() / ((float) mCropRegion.height());
+                float scale = (float) mImageSize.getHeight() / ((float) mCropRegion.height());
                 f_image_pixel = scale * imageDistance * mPixelArraySize.getHeight() /
                         mPhysicalSize.getHeight();
             }
-            return new SizeF(f_image_pixel, f_image_pixel);
+            return f_image_pixel;
         }
-        return new SizeF(1.0f, 1.0f);
+        return null;
     }
 
     public void setLensParams(CameraCharacteristics result) {

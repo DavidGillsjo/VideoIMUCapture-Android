@@ -11,15 +11,15 @@ import android.os.HandlerThread;
 import android.os.Process;
 import android.util.Log;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
 
 public class IMUManager implements SensorEventListener {
     private static final String TAG = "IMUManager";
+    private static final int ACC_TYPE = Sensor.TYPE_ACCELEROMETER_UNCALIBRATED;
+    private static final int GYRO_TYPE = Sensor.TYPE_GYROSCOPE_UNCALIBRATED;
+
     // if the accelerometer data has a timestamp within the
     // [t-x, t+x] of the gyro data at t, then the original acceleration data
     // is used instead of linear interpolation
@@ -36,6 +36,18 @@ public class IMUManager implements SensorEventListener {
         }
     }
 
+    private class SyncedSensorPacket {
+        long timestamp;
+        float[] acc_values;
+        float[] gyro_values;
+
+        SyncedSensorPacket(long time, float[] acc, float[] gyro) {
+            timestamp = time;
+            acc_values = acc;
+            gyro_values = gyro;
+        }
+    }
+
     // Sensor listeners
     private SensorManager mSensorManager;
     private Sensor mAccel;
@@ -45,7 +57,7 @@ public class IMUManager implements SensorEventListener {
     private int angular_acc;
 
     private volatile boolean mRecordingInertialData = false;
-    private BufferedWriter mDataWriter = null;
+    private RecordingWriter mRecordingWriter = null;
     private HandlerThread mSensorThread;
 
     private Deque<SensorPacket> mGyroData = new ArrayDeque<>();
@@ -53,44 +65,26 @@ public class IMUManager implements SensorEventListener {
 
     public IMUManager(Activity activity) {
         mSensorManager = (SensorManager) activity.getSystemService(Context.SENSOR_SERVICE);
-        mAccel = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        mGyro = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        mAccel = mSensorManager.getDefaultSensor(ACC_TYPE);
+        mGyro = mSensorManager.getDefaultSensor(GYRO_TYPE);
     }
 
-    public void startRecording(String captureResultFile) {
-        try {
-            mDataWriter = new BufferedWriter(
-                    new FileWriter(captureResultFile, false));
-            String header = "Timestamp[nanosec], gx[rad/s], gy[rad/s], gz[rad/s]," +
-                    " ax[m/s^2], ay[m/s^2], az[m/s^2]\n";
-
-            mDataWriter.write(header);
-            mRecordingInertialData = true;
-        } catch (IOException err) {
-            System.err.println("IOException in opening inertial data writer at "
-                    + captureResultFile + ": " + err.getMessage());
-        }
+    public void startRecording(RecordingWriter recordingWriter) {
+        mRecordingWriter = recordingWriter;
+        mRecordingInertialData = true;
     }
 
     public void stopRecording() {
         if (mRecordingInertialData) {
             mRecordingInertialData = false;
-            try {
-                mDataWriter.flush();
-                mDataWriter.close();
-            } catch (IOException err) {
-                System.err.println(
-                        "IOException in closing inertial data writer: " + err.getMessage());
-            }
-            mDataWriter = null;
         }
     }
 
     @Override
     public final void onAccuracyChanged(Sensor sensor, int accuracy) {
-        if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+        if (sensor.getType() == ACC_TYPE) {
             linear_acc = accuracy;
-        } else if (sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+        } else if (sensor.getType() == GYRO_TYPE) {
             angular_acc = accuracy;
         }
     }
@@ -98,7 +92,7 @@ public class IMUManager implements SensorEventListener {
     // sync inertial data by interpolating linear acceleration for each gyro data
     // Because the sensor events are delivered to the handler thread in order,
     // no need for synchronization here
-    private SensorPacket syncInertialData() {
+    private SyncedSensorPacket syncInertialData() {
         if (mGyroData.size() >= 1 && mAccelData.size() >= 2) {
             SensorPacket oldestGyro = mGyroData.peekFirst();
             SensorPacket oldestAccel = mAccelData.peekFirst();
@@ -111,12 +105,6 @@ public class IMUManager implements SensorEventListener {
                 mAccelData.clear();
                 mAccelData.add(latestAccel);
             } else { // linearly interpolate the accel data at the gyro timestamp
-                float[] gyro_accel = new float[6];
-                SensorPacket sp = new SensorPacket(oldestGyro.timestamp, gyro_accel);
-                gyro_accel[0] = oldestGyro.values[0];
-                gyro_accel[1] = oldestGyro.values[1];
-                gyro_accel[2] = oldestGyro.values[2];
-
                 SensorPacket leftAccel = null;
                 SensorPacket rightAccel = null;
                 Iterator<SensorPacket> itr = mAccelData.iterator();
@@ -130,25 +118,21 @@ public class IMUManager implements SensorEventListener {
                     }
                 }
 
+                float[] acc_data;
                 if (oldestGyro.timestamp - leftAccel.timestamp <=
                         mInterpolationTimeResolution) {
-                    gyro_accel[3] = leftAccel.values[0];
-                    gyro_accel[4] = leftAccel.values[1];
-                    gyro_accel[5] = leftAccel.values[2];
+                    acc_data = leftAccel.values;
                 } else if (rightAccel.timestamp - oldestGyro.timestamp <=
                         mInterpolationTimeResolution) {
-                    gyro_accel[3] = rightAccel.values[0];
-                    gyro_accel[4] = rightAccel.values[1];
-                    gyro_accel[5] = rightAccel.values[2];
+                    acc_data = rightAccel.values;
                 } else {
-                    float ratio = (oldestGyro.timestamp - leftAccel.timestamp) /
+                    float ratio = (float)(oldestGyro.timestamp - leftAccel.timestamp) /
                             (rightAccel.timestamp - leftAccel.timestamp);
-                    gyro_accel[3] = leftAccel.values[0] +
-                            (rightAccel.values[0] - leftAccel.values[0]) * ratio;
-                    gyro_accel[4] = leftAccel.values[1] +
-                            (rightAccel.values[1] - leftAccel.values[1]) * ratio;
-                    gyro_accel[5] = leftAccel.values[2] +
-                            (rightAccel.values[2] - leftAccel.values[2]) * ratio;
+                    acc_data = new float[leftAccel.values.length];
+                    for (int i = 0 ; i<leftAccel.values.length ; i++) {
+                        acc_data[i] = leftAccel.values[i] +
+                                (rightAccel.values[i] - leftAccel.values[i]) * ratio;
+                    }
                 }
 
                 mGyroData.removeFirst();
@@ -162,33 +146,41 @@ public class IMUManager implements SensorEventListener {
                         break;
                     }
                 }
-                return sp;
+                return new SyncedSensorPacket(oldestGyro.timestamp,
+                        acc_data, oldestGyro.values);
             }
         }
         return null;
     }
 
+    private void writeData(SyncedSensorPacket packet) {
+        RecordingProtos.IMUData.Builder imuBuilder =
+                RecordingProtos.IMUData.newBuilder()
+                .setTimeNs(packet.timestamp)
+                .setAccelAccuracyValue(linear_acc)
+                .setGyroAccuracyValue(angular_acc);
+
+        for (int i = 0 ; i < 3 ; i++) {
+            imuBuilder.addGyro(packet.gyro_values[i]);
+            imuBuilder.addGyroDrift(packet.gyro_values[i+3]);
+            imuBuilder.addAccel(packet.acc_values[i]);
+            imuBuilder.addAccelBias(packet.acc_values[i+3]);
+        }
+
+        mRecordingWriter.queueData(imuBuilder.build());
+    }
+
     @Override
     public final void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+        if (event.sensor.getType() == ACC_TYPE) {
             SensorPacket sp = new SensorPacket(event.timestamp, event.values);
             mAccelData.add(sp);
-        } else if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+        } else if (event.sensor.getType() == GYRO_TYPE) {
             SensorPacket sp = new SensorPacket(event.timestamp, event.values);
             mGyroData.add(sp);
-            SensorPacket syncedData = syncInertialData();
+            SyncedSensorPacket syncedData = syncInertialData();
             if (syncedData != null && mRecordingInertialData) {
-                String delimiter = ",";
-                StringBuilder sb = new StringBuilder();
-                sb.append(syncedData.timestamp);
-                for (int index = 0; index < 6; ++index) {
-                    sb.append(delimiter + syncedData.values[index]);
-                }
-                try {
-                    mDataWriter.write(sb.toString() + "\n");
-                } catch (IOException ioe) {
-                    System.err.println("IOException: " + ioe.getMessage());
-                }
+                writeData(syncedData);
             }
         }
     }
