@@ -28,6 +28,15 @@ message CameraInfo {
   }
   TimestampSource timestamp_source = 6;
 
+  enum LensPoseReference {
+    PRIMARY_CAMERA = 0;
+    GYROSCOPE = 1;
+    UNDEFINED = 2;
+  }
+  LensPoseReference lens_pose_reference = 7;
+  repeated float lens_pose_rotation = 8;
+  repeated float lens_pose_translation = 9;
+
 }
 
 message VideoFrameToTimestamp{

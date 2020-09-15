@@ -299,6 +299,20 @@ public class Camera2Proxy {
             metaBuilder.setFocusCalibrationValue(focus_cal);
         }
 
+        float[] lensTranslation = mCameraCharacteristics.get(CameraCharacteristics.LENS_POSE_TRANSLATION);
+        if (lensTranslation != null) {
+            for (float lT : lensTranslation) {
+                metaBuilder.addLensPoseTranslation(lT);
+            }
+        }
+
+        float[] lensRotation = mCameraCharacteristics.get(CameraCharacteristics.LENS_POSE_ROTATION);
+        if (lensRotation != null) {
+            for (float lR : lensRotation) {
+                metaBuilder.addLensPoseRotation(lR);
+            }
+        }
+
         float[] intrinsics = mCameraCharacteristics.get(CameraCharacteristics.LENS_INTRINSIC_CALIBRATION);
         if ((intrinsics != null) && (abs(intrinsics[0]) > 0)) {
             for (float e : intrinsics) {
@@ -312,6 +326,10 @@ public class Camera2Proxy {
                 for (float e : distortion) {
                     metaBuilder.addDistortionParams(e);
                 }
+            }
+            Integer lensPoseReference = mCameraCharacteristics.get(CameraCharacteristics.LENS_POSE_REFERENCE);
+            if (lensPoseReference != null) {
+                metaBuilder.setLensPoseReferenceValue(lensPoseReference);
             }
         }
         mRecordingWriter.queueData(metaBuilder.build());

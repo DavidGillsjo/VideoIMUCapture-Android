@@ -109,6 +109,51 @@ public final class RecordingProtos {
      * @return The timestampSource.
      */
     se.lth.math.videoimucapture.RecordingProtos.CameraInfo.TimestampSource getTimestampSource();
+
+    /**
+     * <code>.videoimu.CameraInfo.LensPoseReference lens_pose_reference = 7;</code>
+     * @return The enum numeric value on the wire for lensPoseReference.
+     */
+    int getLensPoseReferenceValue();
+    /**
+     * <code>.videoimu.CameraInfo.LensPoseReference lens_pose_reference = 7;</code>
+     * @return The lensPoseReference.
+     */
+    se.lth.math.videoimucapture.RecordingProtos.CameraInfo.LensPoseReference getLensPoseReference();
+
+    /**
+     * <code>repeated float lens_pose_rotation = 8;</code>
+     * @return A list containing the lensPoseRotation.
+     */
+    java.util.List<java.lang.Float> getLensPoseRotationList();
+    /**
+     * <code>repeated float lens_pose_rotation = 8;</code>
+     * @return The count of lensPoseRotation.
+     */
+    int getLensPoseRotationCount();
+    /**
+     * <code>repeated float lens_pose_rotation = 8;</code>
+     * @param index The index of the element to return.
+     * @return The lensPoseRotation at the given index.
+     */
+    float getLensPoseRotation(int index);
+
+    /**
+     * <code>repeated float lens_pose_translation = 9;</code>
+     * @return A list containing the lensPoseTranslation.
+     */
+    java.util.List<java.lang.Float> getLensPoseTranslationList();
+    /**
+     * <code>repeated float lens_pose_translation = 9;</code>
+     * @return The count of lensPoseTranslation.
+     */
+    int getLensPoseTranslationCount();
+    /**
+     * <code>repeated float lens_pose_translation = 9;</code>
+     * @param index The index of the element to return.
+     * @return The lensPoseTranslation at the given index.
+     */
+    float getLensPoseTranslation(int index);
   }
   /**
    * Protobuf type {@code videoimu.CameraInfo}
@@ -127,6 +172,9 @@ public final class RecordingProtos {
       distortionParams_ = emptyFloatList();
       focusCalibration_ = 0;
       timestampSource_ = 0;
+      lensPoseReference_ = 0;
+      lensPoseRotation_ = emptyFloatList();
+      lensPoseTranslation_ = emptyFloatList();
     }
 
     @java.lang.Override
@@ -224,6 +272,54 @@ public final class RecordingProtos {
               timestampSource_ = rawValue;
               break;
             }
+            case 56: {
+              int rawValue = input.readEnum();
+
+              lensPoseReference_ = rawValue;
+              break;
+            }
+            case 69: {
+              if (!((mutable_bitField0_ & 0x00000004) != 0)) {
+                lensPoseRotation_ = newFloatList();
+                mutable_bitField0_ |= 0x00000004;
+              }
+              lensPoseRotation_.addFloat(input.readFloat());
+              break;
+            }
+            case 66: {
+              int length = input.readRawVarint32();
+              int limit = input.pushLimit(length);
+              if (!((mutable_bitField0_ & 0x00000004) != 0) && input.getBytesUntilLimit() > 0) {
+                lensPoseRotation_ = newFloatList();
+                mutable_bitField0_ |= 0x00000004;
+              }
+              while (input.getBytesUntilLimit() > 0) {
+                lensPoseRotation_.addFloat(input.readFloat());
+              }
+              input.popLimit(limit);
+              break;
+            }
+            case 77: {
+              if (!((mutable_bitField0_ & 0x00000008) != 0)) {
+                lensPoseTranslation_ = newFloatList();
+                mutable_bitField0_ |= 0x00000008;
+              }
+              lensPoseTranslation_.addFloat(input.readFloat());
+              break;
+            }
+            case 74: {
+              int length = input.readRawVarint32();
+              int limit = input.pushLimit(length);
+              if (!((mutable_bitField0_ & 0x00000008) != 0) && input.getBytesUntilLimit() > 0) {
+                lensPoseTranslation_ = newFloatList();
+                mutable_bitField0_ |= 0x00000008;
+              }
+              while (input.getBytesUntilLimit() > 0) {
+                lensPoseTranslation_.addFloat(input.readFloat());
+              }
+              input.popLimit(limit);
+              break;
+            }
             default: {
               if (!parseUnknownField(
                   input, unknownFields, extensionRegistry, tag)) {
@@ -244,6 +340,12 @@ public final class RecordingProtos {
         }
         if (((mutable_bitField0_ & 0x00000002) != 0)) {
           distortionParams_.makeImmutable(); // C
+        }
+        if (((mutable_bitField0_ & 0x00000004) != 0)) {
+          lensPoseRotation_.makeImmutable(); // C
+        }
+        if (((mutable_bitField0_ & 0x00000008) != 0)) {
+          lensPoseTranslation_.makeImmutable(); // C
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -487,6 +589,123 @@ public final class RecordingProtos {
       // @@protoc_insertion_point(enum_scope:videoimu.CameraInfo.TimestampSource)
     }
 
+    /**
+     * Protobuf enum {@code videoimu.CameraInfo.LensPoseReference}
+     */
+    public enum LensPoseReference
+        implements com.google.protobuf.ProtocolMessageEnum {
+      /**
+       * <code>PRIMARY_CAMERA = 0;</code>
+       */
+      PRIMARY_CAMERA(0),
+      /**
+       * <code>GYROSCOPE = 1;</code>
+       */
+      GYROSCOPE(1),
+      /**
+       * <code>UNDEFINED = 2;</code>
+       */
+      UNDEFINED(2),
+      UNRECOGNIZED(-1),
+      ;
+
+      /**
+       * <code>PRIMARY_CAMERA = 0;</code>
+       */
+      public static final int PRIMARY_CAMERA_VALUE = 0;
+      /**
+       * <code>GYROSCOPE = 1;</code>
+       */
+      public static final int GYROSCOPE_VALUE = 1;
+      /**
+       * <code>UNDEFINED = 2;</code>
+       */
+      public static final int UNDEFINED_VALUE = 2;
+
+
+      public final int getNumber() {
+        if (this == UNRECOGNIZED) {
+          throw new java.lang.IllegalArgumentException(
+              "Can't get the number of an unknown enum value.");
+        }
+        return value;
+      }
+
+      /**
+       * @param value The numeric wire value of the corresponding enum entry.
+       * @return The enum associated with the given numeric wire value.
+       * @deprecated Use {@link #forNumber(int)} instead.
+       */
+      @java.lang.Deprecated
+      public static LensPoseReference valueOf(int value) {
+        return forNumber(value);
+      }
+
+      /**
+       * @param value The numeric wire value of the corresponding enum entry.
+       * @return The enum associated with the given numeric wire value.
+       */
+      public static LensPoseReference forNumber(int value) {
+        switch (value) {
+          case 0: return PRIMARY_CAMERA;
+          case 1: return GYROSCOPE;
+          case 2: return UNDEFINED;
+          default: return null;
+        }
+      }
+
+      public static com.google.protobuf.Internal.EnumLiteMap<LensPoseReference>
+          internalGetValueMap() {
+        return internalValueMap;
+      }
+      private static final com.google.protobuf.Internal.EnumLiteMap<
+          LensPoseReference> internalValueMap =
+            new com.google.protobuf.Internal.EnumLiteMap<LensPoseReference>() {
+              public LensPoseReference findValueByNumber(int number) {
+                return LensPoseReference.forNumber(number);
+              }
+            };
+
+      public final com.google.protobuf.Descriptors.EnumValueDescriptor
+          getValueDescriptor() {
+        if (this == UNRECOGNIZED) {
+          throw new java.lang.IllegalStateException(
+              "Can't get the descriptor of an unrecognized enum value.");
+        }
+        return getDescriptor().getValues().get(ordinal());
+      }
+      public final com.google.protobuf.Descriptors.EnumDescriptor
+          getDescriptorForType() {
+        return getDescriptor();
+      }
+      public static final com.google.protobuf.Descriptors.EnumDescriptor
+          getDescriptor() {
+        return se.lth.math.videoimucapture.RecordingProtos.CameraInfo.getDescriptor().getEnumTypes().get(2);
+      }
+
+      private static final LensPoseReference[] VALUES = values();
+
+      public static LensPoseReference valueOf(
+          com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+        if (desc.getType() != getDescriptor()) {
+          throw new java.lang.IllegalArgumentException(
+            "EnumValueDescriptor is not for this type.");
+        }
+        if (desc.getIndex() == -1) {
+          return UNRECOGNIZED;
+        }
+        return VALUES[desc.getIndex()];
+      }
+
+      private final int value;
+
+      private LensPoseReference(int value) {
+        this.value = value;
+      }
+
+      // @@protoc_insertion_point(enum_scope:videoimu.CameraInfo.LensPoseReference)
+    }
+
     public static final int INTRINSIC_PARAMS_FIELD_NUMBER = 1;
     private com.google.protobuf.Internal.FloatList intrinsicParams_;
     /**
@@ -627,6 +846,81 @@ public final class RecordingProtos {
       return result == null ? se.lth.math.videoimucapture.RecordingProtos.CameraInfo.TimestampSource.UNRECOGNIZED : result;
     }
 
+    public static final int LENS_POSE_REFERENCE_FIELD_NUMBER = 7;
+    private int lensPoseReference_;
+    /**
+     * <code>.videoimu.CameraInfo.LensPoseReference lens_pose_reference = 7;</code>
+     * @return The enum numeric value on the wire for lensPoseReference.
+     */
+    @java.lang.Override public int getLensPoseReferenceValue() {
+      return lensPoseReference_;
+    }
+    /**
+     * <code>.videoimu.CameraInfo.LensPoseReference lens_pose_reference = 7;</code>
+     * @return The lensPoseReference.
+     */
+    @java.lang.Override public se.lth.math.videoimucapture.RecordingProtos.CameraInfo.LensPoseReference getLensPoseReference() {
+      @SuppressWarnings("deprecation")
+      se.lth.math.videoimucapture.RecordingProtos.CameraInfo.LensPoseReference result = se.lth.math.videoimucapture.RecordingProtos.CameraInfo.LensPoseReference.valueOf(lensPoseReference_);
+      return result == null ? se.lth.math.videoimucapture.RecordingProtos.CameraInfo.LensPoseReference.UNRECOGNIZED : result;
+    }
+
+    public static final int LENS_POSE_ROTATION_FIELD_NUMBER = 8;
+    private com.google.protobuf.Internal.FloatList lensPoseRotation_;
+    /**
+     * <code>repeated float lens_pose_rotation = 8;</code>
+     * @return A list containing the lensPoseRotation.
+     */
+    @java.lang.Override
+    public java.util.List<java.lang.Float>
+        getLensPoseRotationList() {
+      return lensPoseRotation_;
+    }
+    /**
+     * <code>repeated float lens_pose_rotation = 8;</code>
+     * @return The count of lensPoseRotation.
+     */
+    public int getLensPoseRotationCount() {
+      return lensPoseRotation_.size();
+    }
+    /**
+     * <code>repeated float lens_pose_rotation = 8;</code>
+     * @param index The index of the element to return.
+     * @return The lensPoseRotation at the given index.
+     */
+    public float getLensPoseRotation(int index) {
+      return lensPoseRotation_.getFloat(index);
+    }
+    private int lensPoseRotationMemoizedSerializedSize = -1;
+
+    public static final int LENS_POSE_TRANSLATION_FIELD_NUMBER = 9;
+    private com.google.protobuf.Internal.FloatList lensPoseTranslation_;
+    /**
+     * <code>repeated float lens_pose_translation = 9;</code>
+     * @return A list containing the lensPoseTranslation.
+     */
+    @java.lang.Override
+    public java.util.List<java.lang.Float>
+        getLensPoseTranslationList() {
+      return lensPoseTranslation_;
+    }
+    /**
+     * <code>repeated float lens_pose_translation = 9;</code>
+     * @return The count of lensPoseTranslation.
+     */
+    public int getLensPoseTranslationCount() {
+      return lensPoseTranslation_.size();
+    }
+    /**
+     * <code>repeated float lens_pose_translation = 9;</code>
+     * @param index The index of the element to return.
+     * @return The lensPoseTranslation at the given index.
+     */
+    public float getLensPoseTranslation(int index) {
+      return lensPoseTranslation_.getFloat(index);
+    }
+    private int lensPoseTranslationMemoizedSerializedSize = -1;
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -667,6 +961,23 @@ public final class RecordingProtos {
       }
       if (timestampSource_ != se.lth.math.videoimucapture.RecordingProtos.CameraInfo.TimestampSource.UNKNOWN.getNumber()) {
         output.writeEnum(6, timestampSource_);
+      }
+      if (lensPoseReference_ != se.lth.math.videoimucapture.RecordingProtos.CameraInfo.LensPoseReference.PRIMARY_CAMERA.getNumber()) {
+        output.writeEnum(7, lensPoseReference_);
+      }
+      if (getLensPoseRotationList().size() > 0) {
+        output.writeUInt32NoTag(66);
+        output.writeUInt32NoTag(lensPoseRotationMemoizedSerializedSize);
+      }
+      for (int i = 0; i < lensPoseRotation_.size(); i++) {
+        output.writeFloatNoTag(lensPoseRotation_.getFloat(i));
+      }
+      if (getLensPoseTranslationList().size() > 0) {
+        output.writeUInt32NoTag(74);
+        output.writeUInt32NoTag(lensPoseTranslationMemoizedSerializedSize);
+      }
+      for (int i = 0; i < lensPoseTranslation_.size(); i++) {
+        output.writeFloatNoTag(lensPoseTranslation_.getFloat(i));
       }
       unknownFields.writeTo(output);
     }
@@ -715,6 +1026,32 @@ public final class RecordingProtos {
         size += com.google.protobuf.CodedOutputStream
           .computeEnumSize(6, timestampSource_);
       }
+      if (lensPoseReference_ != se.lth.math.videoimucapture.RecordingProtos.CameraInfo.LensPoseReference.PRIMARY_CAMERA.getNumber()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(7, lensPoseReference_);
+      }
+      {
+        int dataSize = 0;
+        dataSize = 4 * getLensPoseRotationList().size();
+        size += dataSize;
+        if (!getLensPoseRotationList().isEmpty()) {
+          size += 1;
+          size += com.google.protobuf.CodedOutputStream
+              .computeInt32SizeNoTag(dataSize);
+        }
+        lensPoseRotationMemoizedSerializedSize = dataSize;
+      }
+      {
+        int dataSize = 0;
+        dataSize = 4 * getLensPoseTranslationList().size();
+        size += dataSize;
+        if (!getLensPoseTranslationList().isEmpty()) {
+          size += 1;
+          size += com.google.protobuf.CodedOutputStream
+              .computeInt32SizeNoTag(dataSize);
+        }
+        lensPoseTranslationMemoizedSerializedSize = dataSize;
+      }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
@@ -740,6 +1077,11 @@ public final class RecordingProtos {
           != other.getVideoStabilization()) return false;
       if (focusCalibration_ != other.focusCalibration_) return false;
       if (timestampSource_ != other.timestampSource_) return false;
+      if (lensPoseReference_ != other.lensPoseReference_) return false;
+      if (!getLensPoseRotationList()
+          .equals(other.getLensPoseRotationList())) return false;
+      if (!getLensPoseTranslationList()
+          .equals(other.getLensPoseTranslationList())) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
       return true;
     }
@@ -769,6 +1111,16 @@ public final class RecordingProtos {
       hash = (53 * hash) + focusCalibration_;
       hash = (37 * hash) + TIMESTAMP_SOURCE_FIELD_NUMBER;
       hash = (53 * hash) + timestampSource_;
+      hash = (37 * hash) + LENS_POSE_REFERENCE_FIELD_NUMBER;
+      hash = (53 * hash) + lensPoseReference_;
+      if (getLensPoseRotationCount() > 0) {
+        hash = (37 * hash) + LENS_POSE_ROTATION_FIELD_NUMBER;
+        hash = (53 * hash) + getLensPoseRotationList().hashCode();
+      }
+      if (getLensPoseTranslationCount() > 0) {
+        hash = (37 * hash) + LENS_POSE_TRANSLATION_FIELD_NUMBER;
+        hash = (53 * hash) + getLensPoseTranslationList().hashCode();
+      }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -914,6 +1266,12 @@ public final class RecordingProtos {
 
         timestampSource_ = 0;
 
+        lensPoseReference_ = 0;
+
+        lensPoseRotation_ = emptyFloatList();
+        bitField0_ = (bitField0_ & ~0x00000004);
+        lensPoseTranslation_ = emptyFloatList();
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -955,6 +1313,17 @@ public final class RecordingProtos {
         result.videoStabilization_ = videoStabilization_;
         result.focusCalibration_ = focusCalibration_;
         result.timestampSource_ = timestampSource_;
+        result.lensPoseReference_ = lensPoseReference_;
+        if (((bitField0_ & 0x00000004) != 0)) {
+          lensPoseRotation_.makeImmutable();
+          bitField0_ = (bitField0_ & ~0x00000004);
+        }
+        result.lensPoseRotation_ = lensPoseRotation_;
+        if (((bitField0_ & 0x00000008) != 0)) {
+          lensPoseTranslation_.makeImmutable();
+          bitField0_ = (bitField0_ & ~0x00000008);
+        }
+        result.lensPoseTranslation_ = lensPoseTranslation_;
         onBuilt();
         return result;
       }
@@ -1034,6 +1403,29 @@ public final class RecordingProtos {
         }
         if (other.timestampSource_ != 0) {
           setTimestampSourceValue(other.getTimestampSourceValue());
+        }
+        if (other.lensPoseReference_ != 0) {
+          setLensPoseReferenceValue(other.getLensPoseReferenceValue());
+        }
+        if (!other.lensPoseRotation_.isEmpty()) {
+          if (lensPoseRotation_.isEmpty()) {
+            lensPoseRotation_ = other.lensPoseRotation_;
+            bitField0_ = (bitField0_ & ~0x00000004);
+          } else {
+            ensureLensPoseRotationIsMutable();
+            lensPoseRotation_.addAll(other.lensPoseRotation_);
+          }
+          onChanged();
+        }
+        if (!other.lensPoseTranslation_.isEmpty()) {
+          if (lensPoseTranslation_.isEmpty()) {
+            lensPoseTranslation_ = other.lensPoseTranslation_;
+            bitField0_ = (bitField0_ & ~0x00000008);
+          } else {
+            ensureLensPoseTranslationIsMutable();
+            lensPoseTranslation_.addAll(other.lensPoseTranslation_);
+          }
+          onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -1445,6 +1837,218 @@ public final class RecordingProtos {
       public Builder clearTimestampSource() {
         
         timestampSource_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int lensPoseReference_ = 0;
+      /**
+       * <code>.videoimu.CameraInfo.LensPoseReference lens_pose_reference = 7;</code>
+       * @return The enum numeric value on the wire for lensPoseReference.
+       */
+      @java.lang.Override public int getLensPoseReferenceValue() {
+        return lensPoseReference_;
+      }
+      /**
+       * <code>.videoimu.CameraInfo.LensPoseReference lens_pose_reference = 7;</code>
+       * @param value The enum numeric value on the wire for lensPoseReference to set.
+       * @return This builder for chaining.
+       */
+      public Builder setLensPoseReferenceValue(int value) {
+        
+        lensPoseReference_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.videoimu.CameraInfo.LensPoseReference lens_pose_reference = 7;</code>
+       * @return The lensPoseReference.
+       */
+      @java.lang.Override
+      public se.lth.math.videoimucapture.RecordingProtos.CameraInfo.LensPoseReference getLensPoseReference() {
+        @SuppressWarnings("deprecation")
+        se.lth.math.videoimucapture.RecordingProtos.CameraInfo.LensPoseReference result = se.lth.math.videoimucapture.RecordingProtos.CameraInfo.LensPoseReference.valueOf(lensPoseReference_);
+        return result == null ? se.lth.math.videoimucapture.RecordingProtos.CameraInfo.LensPoseReference.UNRECOGNIZED : result;
+      }
+      /**
+       * <code>.videoimu.CameraInfo.LensPoseReference lens_pose_reference = 7;</code>
+       * @param value The lensPoseReference to set.
+       * @return This builder for chaining.
+       */
+      public Builder setLensPoseReference(se.lth.math.videoimucapture.RecordingProtos.CameraInfo.LensPoseReference value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        
+        lensPoseReference_ = value.getNumber();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.videoimu.CameraInfo.LensPoseReference lens_pose_reference = 7;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearLensPoseReference() {
+        
+        lensPoseReference_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private com.google.protobuf.Internal.FloatList lensPoseRotation_ = emptyFloatList();
+      private void ensureLensPoseRotationIsMutable() {
+        if (!((bitField0_ & 0x00000004) != 0)) {
+          lensPoseRotation_ = mutableCopy(lensPoseRotation_);
+          bitField0_ |= 0x00000004;
+         }
+      }
+      /**
+       * <code>repeated float lens_pose_rotation = 8;</code>
+       * @return A list containing the lensPoseRotation.
+       */
+      public java.util.List<java.lang.Float>
+          getLensPoseRotationList() {
+        return ((bitField0_ & 0x00000004) != 0) ?
+                 java.util.Collections.unmodifiableList(lensPoseRotation_) : lensPoseRotation_;
+      }
+      /**
+       * <code>repeated float lens_pose_rotation = 8;</code>
+       * @return The count of lensPoseRotation.
+       */
+      public int getLensPoseRotationCount() {
+        return lensPoseRotation_.size();
+      }
+      /**
+       * <code>repeated float lens_pose_rotation = 8;</code>
+       * @param index The index of the element to return.
+       * @return The lensPoseRotation at the given index.
+       */
+      public float getLensPoseRotation(int index) {
+        return lensPoseRotation_.getFloat(index);
+      }
+      /**
+       * <code>repeated float lens_pose_rotation = 8;</code>
+       * @param index The index to set the value at.
+       * @param value The lensPoseRotation to set.
+       * @return This builder for chaining.
+       */
+      public Builder setLensPoseRotation(
+          int index, float value) {
+        ensureLensPoseRotationIsMutable();
+        lensPoseRotation_.setFloat(index, value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated float lens_pose_rotation = 8;</code>
+       * @param value The lensPoseRotation to add.
+       * @return This builder for chaining.
+       */
+      public Builder addLensPoseRotation(float value) {
+        ensureLensPoseRotationIsMutable();
+        lensPoseRotation_.addFloat(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated float lens_pose_rotation = 8;</code>
+       * @param values The lensPoseRotation to add.
+       * @return This builder for chaining.
+       */
+      public Builder addAllLensPoseRotation(
+          java.lang.Iterable<? extends java.lang.Float> values) {
+        ensureLensPoseRotationIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, lensPoseRotation_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated float lens_pose_rotation = 8;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearLensPoseRotation() {
+        lensPoseRotation_ = emptyFloatList();
+        bitField0_ = (bitField0_ & ~0x00000004);
+        onChanged();
+        return this;
+      }
+
+      private com.google.protobuf.Internal.FloatList lensPoseTranslation_ = emptyFloatList();
+      private void ensureLensPoseTranslationIsMutable() {
+        if (!((bitField0_ & 0x00000008) != 0)) {
+          lensPoseTranslation_ = mutableCopy(lensPoseTranslation_);
+          bitField0_ |= 0x00000008;
+         }
+      }
+      /**
+       * <code>repeated float lens_pose_translation = 9;</code>
+       * @return A list containing the lensPoseTranslation.
+       */
+      public java.util.List<java.lang.Float>
+          getLensPoseTranslationList() {
+        return ((bitField0_ & 0x00000008) != 0) ?
+                 java.util.Collections.unmodifiableList(lensPoseTranslation_) : lensPoseTranslation_;
+      }
+      /**
+       * <code>repeated float lens_pose_translation = 9;</code>
+       * @return The count of lensPoseTranslation.
+       */
+      public int getLensPoseTranslationCount() {
+        return lensPoseTranslation_.size();
+      }
+      /**
+       * <code>repeated float lens_pose_translation = 9;</code>
+       * @param index The index of the element to return.
+       * @return The lensPoseTranslation at the given index.
+       */
+      public float getLensPoseTranslation(int index) {
+        return lensPoseTranslation_.getFloat(index);
+      }
+      /**
+       * <code>repeated float lens_pose_translation = 9;</code>
+       * @param index The index to set the value at.
+       * @param value The lensPoseTranslation to set.
+       * @return This builder for chaining.
+       */
+      public Builder setLensPoseTranslation(
+          int index, float value) {
+        ensureLensPoseTranslationIsMutable();
+        lensPoseTranslation_.setFloat(index, value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated float lens_pose_translation = 9;</code>
+       * @param value The lensPoseTranslation to add.
+       * @return This builder for chaining.
+       */
+      public Builder addLensPoseTranslation(float value) {
+        ensureLensPoseTranslationIsMutable();
+        lensPoseTranslation_.addFloat(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated float lens_pose_translation = 9;</code>
+       * @param values The lensPoseTranslation to add.
+       * @return This builder for chaining.
+       */
+      public Builder addAllLensPoseTranslation(
+          java.lang.Iterable<? extends java.lang.Float> values) {
+        ensureLensPoseTranslationIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, lensPoseTranslation_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated float lens_pose_translation = 9;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearLensPoseTranslation() {
+        lensPoseTranslation_ = emptyFloatList();
+        bitField0_ = (bitField0_ & ~0x00000008);
         onChanged();
         return this;
       }
@@ -9597,47 +10201,52 @@ public final class RecordingProtos {
   static {
     java.lang.String[] descriptorData = {
       "\n\017recording.proto\022\010videoimu\032\037google/prot" +
-      "obuf/timestamp.proto\"\372\002\n\nCameraInfo\022\030\n\020i" +
+      "obuf/timestamp.proto\"\301\004\n\nCameraInfo\022\030\n\020i" +
       "ntrinsic_params\030\001 \003(\002\022\031\n\021distortion_para" +
       "ms\030\002 \003(\002\022#\n\033optical_image_stabilization\030" +
       "\003 \001(\010\022\033\n\023video_stabilization\030\004 \001(\010\022@\n\021fo" +
       "cus_calibration\030\005 \001(\0162%.videoimu.CameraI" +
       "nfo.FocusCalibration\022>\n\020timestamp_source" +
       "\030\006 \001(\0162$.videoimu.CameraInfo.TimestampSo" +
-      "urce\"E\n\020FocusCalibration\022\020\n\014UNCALIBRATED" +
-      "\020\000\022\017\n\013APPROXIMATE\020\001\022\016\n\nCALIBRATED\020\002\",\n\017T" +
-      "imestampSource\022\013\n\007UNKNOWN\020\000\022\014\n\010REALTIME\020" +
-      "\001\";\n\025VideoFrameToTimestamp\022\017\n\007time_us\030\001 " +
-      "\001(\003\022\021\n\tframe_nbr\030\002 \001(\003\"\354\002\n\022VideoFrameMet" +
-      "aData\022\017\n\007time_ns\030\001 \001(\003\022\024\n\014frame_number\030\002" +
-      " \001(\003\022\030\n\020exposure_time_ns\030\003 \001(\003\022\031\n\021frame_" +
-      "duration_ns\030\004 \001(\003\022\030\n\020frame_readout_ns\030\005 " +
-      "\001(\003\022\013\n\003iso\030\006 \001(\005\022\027\n\017focal_length_mm\030\007 \001(" +
-      "\002\022\034\n\024est_focal_length_pix\030\010 \001(\002\022\037\n\027focus" +
-      "_distance_diopters\030\t \001(\002\022;\n\013OIS_samples\030" +
-      "\n \003(\0132&.videoimu.VideoFrameMetaData.OISS" +
-      "ample\032>\n\tOISSample\022\017\n\007time_ns\030\001 \001(\003\022\017\n\007x" +
-      "_shift\030\002 \001(\002\022\017\n\007y_shift\030\003 \001(\002\"\t\n\007IMUInfo" +
-      "\"\201\002\n\007IMUData\022\017\n\007time_ns\030\001 \001(\003\022\014\n\004gyro\030\002 " +
-      "\003(\002\022\022\n\ngyro_drift\030\003 \003(\002\022\r\n\005accel\030\004 \003(\002\022\022" +
-      "\n\naccel_bias\030\005 \003(\002\0221\n\rgyro_accuracy\030\006 \001(" +
-      "\0162\032.videoimu.IMUData.Accuracy\0222\n\016accel_a" +
-      "ccuracy\030\007 \001(\0162\032.videoimu.IMUData.Accurac" +
-      "y\"9\n\010Accuracy\022\016\n\nUNRELIABLE\020\000\022\007\n\003LOW\020\001\022\n" +
-      "\n\006MEDIUM\020\002\022\010\n\004HIGH\020\003\"\336\001\n\020VideoCaptureDat" +
-      "a\022(\n\004time\030\001 \001(\0132\032.google.protobuf.Timest" +
-      "amp\022)\n\013camera_meta\030\002 \001(\0132\024.videoimu.Came" +
-      "raInfo\022#\n\010imu_meta\030\003 \001(\0132\021.videoimu.IMUI" +
-      "nfo\022\036\n\003imu\030\004 \003(\0132\021.videoimu.IMUData\0220\n\nv" +
-      "ideo_meta\030\005 \003(\0132\034.videoimu.VideoFrameMet" +
-      "aData\"\375\001\n\016MessageWrapper\022+\n\013camera_meta\030" +
-      "\001 \001(\0132\024.videoimu.CameraInfoH\000\022%\n\010imu_dat" +
-      "a\030\002 \001(\0132\021.videoimu.IMUDataH\000\022%\n\010imu_meta" +
-      "\030\003 \001(\0132\021.videoimu.IMUInfoH\000\0222\n\nframe_met" +
-      "a\030\004 \001(\0132\034.videoimu.VideoFrameMetaDataH\000\022" +
-      "5\n\nframe_time\030\005 \001(\0132\037.videoimu.VideoFram" +
-      "eToTimestampH\000B\005\n\003msgB.\n\033se.lth.math.vid" +
-      "eoimucaptureB\017RecordingProtosb\006proto3"
+      "urce\022C\n\023lens_pose_reference\030\007 \001(\0162&.vide" +
+      "oimu.CameraInfo.LensPoseReference\022\032\n\022len" +
+      "s_pose_rotation\030\010 \003(\002\022\035\n\025lens_pose_trans" +
+      "lation\030\t \003(\002\"E\n\020FocusCalibration\022\020\n\014UNCA" +
+      "LIBRATED\020\000\022\017\n\013APPROXIMATE\020\001\022\016\n\nCALIBRATE" +
+      "D\020\002\",\n\017TimestampSource\022\013\n\007UNKNOWN\020\000\022\014\n\010R" +
+      "EALTIME\020\001\"E\n\021LensPoseReference\022\022\n\016PRIMAR" +
+      "Y_CAMERA\020\000\022\r\n\tGYROSCOPE\020\001\022\r\n\tUNDEFINED\020\002" +
+      "\";\n\025VideoFrameToTimestamp\022\017\n\007time_us\030\001 \001" +
+      "(\003\022\021\n\tframe_nbr\030\002 \001(\003\"\354\002\n\022VideoFrameMeta" +
+      "Data\022\017\n\007time_ns\030\001 \001(\003\022\024\n\014frame_number\030\002 " +
+      "\001(\003\022\030\n\020exposure_time_ns\030\003 \001(\003\022\031\n\021frame_d" +
+      "uration_ns\030\004 \001(\003\022\030\n\020frame_readout_ns\030\005 \001" +
+      "(\003\022\013\n\003iso\030\006 \001(\005\022\027\n\017focal_length_mm\030\007 \001(\002" +
+      "\022\034\n\024est_focal_length_pix\030\010 \001(\002\022\037\n\027focus_" +
+      "distance_diopters\030\t \001(\002\022;\n\013OIS_samples\030\n" +
+      " \003(\0132&.videoimu.VideoFrameMetaData.OISSa" +
+      "mple\032>\n\tOISSample\022\017\n\007time_ns\030\001 \001(\003\022\017\n\007x_" +
+      "shift\030\002 \001(\002\022\017\n\007y_shift\030\003 \001(\002\"\t\n\007IMUInfo\"" +
+      "\201\002\n\007IMUData\022\017\n\007time_ns\030\001 \001(\003\022\014\n\004gyro\030\002 \003" +
+      "(\002\022\022\n\ngyro_drift\030\003 \003(\002\022\r\n\005accel\030\004 \003(\002\022\022\n" +
+      "\naccel_bias\030\005 \003(\002\0221\n\rgyro_accuracy\030\006 \001(\016" +
+      "2\032.videoimu.IMUData.Accuracy\0222\n\016accel_ac" +
+      "curacy\030\007 \001(\0162\032.videoimu.IMUData.Accuracy" +
+      "\"9\n\010Accuracy\022\016\n\nUNRELIABLE\020\000\022\007\n\003LOW\020\001\022\n\n" +
+      "\006MEDIUM\020\002\022\010\n\004HIGH\020\003\"\336\001\n\020VideoCaptureData" +
+      "\022(\n\004time\030\001 \001(\0132\032.google.protobuf.Timesta" +
+      "mp\022)\n\013camera_meta\030\002 \001(\0132\024.videoimu.Camer" +
+      "aInfo\022#\n\010imu_meta\030\003 \001(\0132\021.videoimu.IMUIn" +
+      "fo\022\036\n\003imu\030\004 \003(\0132\021.videoimu.IMUData\0220\n\nvi" +
+      "deo_meta\030\005 \003(\0132\034.videoimu.VideoFrameMeta" +
+      "Data\"\375\001\n\016MessageWrapper\022+\n\013camera_meta\030\001" +
+      " \001(\0132\024.videoimu.CameraInfoH\000\022%\n\010imu_data" +
+      "\030\002 \001(\0132\021.videoimu.IMUDataH\000\022%\n\010imu_meta\030" +
+      "\003 \001(\0132\021.videoimu.IMUInfoH\000\0222\n\nframe_meta" +
+      "\030\004 \001(\0132\034.videoimu.VideoFrameMetaDataH\000\0225" +
+      "\n\nframe_time\030\005 \001(\0132\037.videoimu.VideoFrame" +
+      "ToTimestampH\000B\005\n\003msgB.\n\033se.lth.math.vide" +
+      "oimucaptureB\017RecordingProtosb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -9649,7 +10258,7 @@ public final class RecordingProtos {
     internal_static_videoimu_CameraInfo_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_videoimu_CameraInfo_descriptor,
-        new java.lang.String[] { "IntrinsicParams", "DistortionParams", "OpticalImageStabilization", "VideoStabilization", "FocusCalibration", "TimestampSource", });
+        new java.lang.String[] { "IntrinsicParams", "DistortionParams", "OpticalImageStabilization", "VideoStabilization", "FocusCalibration", "TimestampSource", "LensPoseReference", "LensPoseRotation", "LensPoseTranslation", });
     internal_static_videoimu_VideoFrameToTimestamp_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_videoimu_VideoFrameToTimestamp_fieldAccessorTable = new

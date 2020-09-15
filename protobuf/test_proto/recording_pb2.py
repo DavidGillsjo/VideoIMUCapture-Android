@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=b'\n\033se.lth.math.videoimucaptureB\017RecordingProtos',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0frecording.proto\x12\x08videoimu\x1a\x1fgoogle/protobuf/timestamp.proto\"\xfa\x02\n\nCameraInfo\x12\x18\n\x10intrinsic_params\x18\x01 \x03(\x02\x12\x19\n\x11\x64istortion_params\x18\x02 \x03(\x02\x12#\n\x1boptical_image_stabilization\x18\x03 \x01(\x08\x12\x1b\n\x13video_stabilization\x18\x04 \x01(\x08\x12@\n\x11\x66ocus_calibration\x18\x05 \x01(\x0e\x32%.videoimu.CameraInfo.FocusCalibration\x12>\n\x10timestamp_source\x18\x06 \x01(\x0e\x32$.videoimu.CameraInfo.TimestampSource\"E\n\x10\x46ocusCalibration\x12\x10\n\x0cUNCALIBRATED\x10\x00\x12\x0f\n\x0b\x41PPROXIMATE\x10\x01\x12\x0e\n\nCALIBRATED\x10\x02\",\n\x0fTimestampSource\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0c\n\x08REALTIME\x10\x01\";\n\x15VideoFrameToTimestamp\x12\x0f\n\x07time_us\x18\x01 \x01(\x03\x12\x11\n\tframe_nbr\x18\x02 \x01(\x03\"\xec\x02\n\x12VideoFrameMetaData\x12\x0f\n\x07time_ns\x18\x01 \x01(\x03\x12\x14\n\x0c\x66rame_number\x18\x02 \x01(\x03\x12\x18\n\x10\x65xposure_time_ns\x18\x03 \x01(\x03\x12\x19\n\x11\x66rame_duration_ns\x18\x04 \x01(\x03\x12\x18\n\x10\x66rame_readout_ns\x18\x05 \x01(\x03\x12\x0b\n\x03iso\x18\x06 \x01(\x05\x12\x17\n\x0f\x66ocal_length_mm\x18\x07 \x01(\x02\x12\x1c\n\x14\x65st_focal_length_pix\x18\x08 \x01(\x02\x12\x1f\n\x17\x66ocus_distance_diopters\x18\t \x01(\x02\x12;\n\x0bOIS_samples\x18\n \x03(\x0b\x32&.videoimu.VideoFrameMetaData.OISSample\x1a>\n\tOISSample\x12\x0f\n\x07time_ns\x18\x01 \x01(\x03\x12\x0f\n\x07x_shift\x18\x02 \x01(\x02\x12\x0f\n\x07y_shift\x18\x03 \x01(\x02\"\t\n\x07IMUInfo\"\x81\x02\n\x07IMUData\x12\x0f\n\x07time_ns\x18\x01 \x01(\x03\x12\x0c\n\x04gyro\x18\x02 \x03(\x02\x12\x12\n\ngyro_drift\x18\x03 \x03(\x02\x12\r\n\x05\x61\x63\x63\x65l\x18\x04 \x03(\x02\x12\x12\n\naccel_bias\x18\x05 \x03(\x02\x12\x31\n\rgyro_accuracy\x18\x06 \x01(\x0e\x32\x1a.videoimu.IMUData.Accuracy\x12\x32\n\x0e\x61\x63\x63\x65l_accuracy\x18\x07 \x01(\x0e\x32\x1a.videoimu.IMUData.Accuracy\"9\n\x08\x41\x63\x63uracy\x12\x0e\n\nUNRELIABLE\x10\x00\x12\x07\n\x03LOW\x10\x01\x12\n\n\x06MEDIUM\x10\x02\x12\x08\n\x04HIGH\x10\x03\"\xde\x01\n\x10VideoCaptureData\x12(\n\x04time\x18\x01 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12)\n\x0b\x63\x61mera_meta\x18\x02 \x01(\x0b\x32\x14.videoimu.CameraInfo\x12#\n\x08imu_meta\x18\x03 \x01(\x0b\x32\x11.videoimu.IMUInfo\x12\x1e\n\x03imu\x18\x04 \x03(\x0b\x32\x11.videoimu.IMUData\x12\x30\n\nvideo_meta\x18\x05 \x03(\x0b\x32\x1c.videoimu.VideoFrameMetaData\"\xfd\x01\n\x0eMessageWrapper\x12+\n\x0b\x63\x61mera_meta\x18\x01 \x01(\x0b\x32\x14.videoimu.CameraInfoH\x00\x12%\n\x08imu_data\x18\x02 \x01(\x0b\x32\x11.videoimu.IMUDataH\x00\x12%\n\x08imu_meta\x18\x03 \x01(\x0b\x32\x11.videoimu.IMUInfoH\x00\x12\x32\n\nframe_meta\x18\x04 \x01(\x0b\x32\x1c.videoimu.VideoFrameMetaDataH\x00\x12\x35\n\nframe_time\x18\x05 \x01(\x0b\x32\x1f.videoimu.VideoFrameToTimestampH\x00\x42\x05\n\x03msgB.\n\x1bse.lth.math.videoimucaptureB\x0fRecordingProtosb\x06proto3'
+  serialized_pb=b'\n\x0frecording.proto\x12\x08videoimu\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc1\x04\n\nCameraInfo\x12\x18\n\x10intrinsic_params\x18\x01 \x03(\x02\x12\x19\n\x11\x64istortion_params\x18\x02 \x03(\x02\x12#\n\x1boptical_image_stabilization\x18\x03 \x01(\x08\x12\x1b\n\x13video_stabilization\x18\x04 \x01(\x08\x12@\n\x11\x66ocus_calibration\x18\x05 \x01(\x0e\x32%.videoimu.CameraInfo.FocusCalibration\x12>\n\x10timestamp_source\x18\x06 \x01(\x0e\x32$.videoimu.CameraInfo.TimestampSource\x12\x43\n\x13lens_pose_reference\x18\x07 \x01(\x0e\x32&.videoimu.CameraInfo.LensPoseReference\x12\x1a\n\x12lens_pose_rotation\x18\x08 \x03(\x02\x12\x1d\n\x15lens_pose_translation\x18\t \x03(\x02\"E\n\x10\x46ocusCalibration\x12\x10\n\x0cUNCALIBRATED\x10\x00\x12\x0f\n\x0b\x41PPROXIMATE\x10\x01\x12\x0e\n\nCALIBRATED\x10\x02\",\n\x0fTimestampSource\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0c\n\x08REALTIME\x10\x01\"E\n\x11LensPoseReference\x12\x12\n\x0ePRIMARY_CAMERA\x10\x00\x12\r\n\tGYROSCOPE\x10\x01\x12\r\n\tUNDEFINED\x10\x02\";\n\x15VideoFrameToTimestamp\x12\x0f\n\x07time_us\x18\x01 \x01(\x03\x12\x11\n\tframe_nbr\x18\x02 \x01(\x03\"\xec\x02\n\x12VideoFrameMetaData\x12\x0f\n\x07time_ns\x18\x01 \x01(\x03\x12\x14\n\x0c\x66rame_number\x18\x02 \x01(\x03\x12\x18\n\x10\x65xposure_time_ns\x18\x03 \x01(\x03\x12\x19\n\x11\x66rame_duration_ns\x18\x04 \x01(\x03\x12\x18\n\x10\x66rame_readout_ns\x18\x05 \x01(\x03\x12\x0b\n\x03iso\x18\x06 \x01(\x05\x12\x17\n\x0f\x66ocal_length_mm\x18\x07 \x01(\x02\x12\x1c\n\x14\x65st_focal_length_pix\x18\x08 \x01(\x02\x12\x1f\n\x17\x66ocus_distance_diopters\x18\t \x01(\x02\x12;\n\x0bOIS_samples\x18\n \x03(\x0b\x32&.videoimu.VideoFrameMetaData.OISSample\x1a>\n\tOISSample\x12\x0f\n\x07time_ns\x18\x01 \x01(\x03\x12\x0f\n\x07x_shift\x18\x02 \x01(\x02\x12\x0f\n\x07y_shift\x18\x03 \x01(\x02\"\t\n\x07IMUInfo\"\x81\x02\n\x07IMUData\x12\x0f\n\x07time_ns\x18\x01 \x01(\x03\x12\x0c\n\x04gyro\x18\x02 \x03(\x02\x12\x12\n\ngyro_drift\x18\x03 \x03(\x02\x12\r\n\x05\x61\x63\x63\x65l\x18\x04 \x03(\x02\x12\x12\n\naccel_bias\x18\x05 \x03(\x02\x12\x31\n\rgyro_accuracy\x18\x06 \x01(\x0e\x32\x1a.videoimu.IMUData.Accuracy\x12\x32\n\x0e\x61\x63\x63\x65l_accuracy\x18\x07 \x01(\x0e\x32\x1a.videoimu.IMUData.Accuracy\"9\n\x08\x41\x63\x63uracy\x12\x0e\n\nUNRELIABLE\x10\x00\x12\x07\n\x03LOW\x10\x01\x12\n\n\x06MEDIUM\x10\x02\x12\x08\n\x04HIGH\x10\x03\"\xde\x01\n\x10VideoCaptureData\x12(\n\x04time\x18\x01 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12)\n\x0b\x63\x61mera_meta\x18\x02 \x01(\x0b\x32\x14.videoimu.CameraInfo\x12#\n\x08imu_meta\x18\x03 \x01(\x0b\x32\x11.videoimu.IMUInfo\x12\x1e\n\x03imu\x18\x04 \x03(\x0b\x32\x11.videoimu.IMUData\x12\x30\n\nvideo_meta\x18\x05 \x03(\x0b\x32\x1c.videoimu.VideoFrameMetaData\"\xfd\x01\n\x0eMessageWrapper\x12+\n\x0b\x63\x61mera_meta\x18\x01 \x01(\x0b\x32\x14.videoimu.CameraInfoH\x00\x12%\n\x08imu_data\x18\x02 \x01(\x0b\x32\x11.videoimu.IMUDataH\x00\x12%\n\x08imu_meta\x18\x03 \x01(\x0b\x32\x11.videoimu.IMUInfoH\x00\x12\x32\n\nframe_meta\x18\x04 \x01(\x0b\x32\x1c.videoimu.VideoFrameMetaDataH\x00\x12\x35\n\nframe_time\x18\x05 \x01(\x0b\x32\x1f.videoimu.VideoFrameToTimestampH\x00\x42\x05\n\x03msgB.\n\x1bse.lth.math.videoimucaptureB\x0fRecordingProtosb\x06proto3'
   ,
   dependencies=[google_dot_protobuf_dot_timestamp__pb2.DESCRIPTOR,])
 
@@ -51,8 +51,8 @@ _CAMERAINFO_FOCUSCALIBRATION = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=326,
-  serialized_end=395,
+  serialized_start=454,
+  serialized_end=523,
 )
 _sym_db.RegisterEnumDescriptor(_CAMERAINFO_FOCUSCALIBRATION)
 
@@ -76,10 +76,40 @@ _CAMERAINFO_TIMESTAMPSOURCE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=397,
-  serialized_end=441,
+  serialized_start=525,
+  serialized_end=569,
 )
 _sym_db.RegisterEnumDescriptor(_CAMERAINFO_TIMESTAMPSOURCE)
+
+_CAMERAINFO_LENSPOSEREFERENCE = _descriptor.EnumDescriptor(
+  name='LensPoseReference',
+  full_name='videoimu.CameraInfo.LensPoseReference',
+  filename=None,
+  file=DESCRIPTOR,
+  create_key=_descriptor._internal_create_key,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='PRIMARY_CAMERA', index=0, number=0,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='GYROSCOPE', index=1, number=1,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='UNDEFINED', index=2, number=2,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+  ],
+  containing_type=None,
+  serialized_options=None,
+  serialized_start=571,
+  serialized_end=640,
+)
+_sym_db.RegisterEnumDescriptor(_CAMERAINFO_LENSPOSEREFERENCE)
 
 _IMUDATA_ACCURACY = _descriptor.EnumDescriptor(
   name='Accuracy',
@@ -111,8 +141,8 @@ _IMUDATA_ACCURACY = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1083,
-  serialized_end=1140,
+  serialized_start=1282,
+  serialized_end=1339,
 )
 _sym_db.RegisterEnumDescriptor(_IMUDATA_ACCURACY)
 
@@ -167,6 +197,27 @@ _CAMERAINFO = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='lens_pose_reference', full_name='videoimu.CameraInfo.lens_pose_reference', index=6,
+      number=7, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='lens_pose_rotation', full_name='videoimu.CameraInfo.lens_pose_rotation', index=7,
+      number=8, type=2, cpp_type=6, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='lens_pose_translation', full_name='videoimu.CameraInfo.lens_pose_translation', index=8,
+      number=9, type=2, cpp_type=6, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -174,6 +225,7 @@ _CAMERAINFO = _descriptor.Descriptor(
   enum_types=[
     _CAMERAINFO_FOCUSCALIBRATION,
     _CAMERAINFO_TIMESTAMPSOURCE,
+    _CAMERAINFO_LENSPOSEREFERENCE,
   ],
   serialized_options=None,
   is_extendable=False,
@@ -182,7 +234,7 @@ _CAMERAINFO = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=63,
-  serialized_end=441,
+  serialized_end=640,
 )
 
 
@@ -220,8 +272,8 @@ _VIDEOFRAMETOTIMESTAMP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=443,
-  serialized_end=502,
+  serialized_start=642,
+  serialized_end=701,
 )
 
 
@@ -266,8 +318,8 @@ _VIDEOFRAMEMETADATA_OISSAMPLE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=807,
-  serialized_end=869,
+  serialized_start=1006,
+  serialized_end=1068,
 )
 
 _VIDEOFRAMEMETADATA = _descriptor.Descriptor(
@@ -360,8 +412,8 @@ _VIDEOFRAMEMETADATA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=505,
-  serialized_end=869,
+  serialized_start=704,
+  serialized_end=1068,
 )
 
 
@@ -385,8 +437,8 @@ _IMUINFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=871,
-  serialized_end=880,
+  serialized_start=1070,
+  serialized_end=1079,
 )
 
 
@@ -460,8 +512,8 @@ _IMUDATA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=883,
-  serialized_end=1140,
+  serialized_start=1082,
+  serialized_end=1339,
 )
 
 
@@ -520,8 +572,8 @@ _VIDEOCAPTUREDATA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1143,
-  serialized_end=1365,
+  serialized_start=1342,
+  serialized_end=1564,
 )
 
 
@@ -585,14 +637,16 @@ _MESSAGEWRAPPER = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=1368,
-  serialized_end=1621,
+  serialized_start=1567,
+  serialized_end=1820,
 )
 
 _CAMERAINFO.fields_by_name['focus_calibration'].enum_type = _CAMERAINFO_FOCUSCALIBRATION
 _CAMERAINFO.fields_by_name['timestamp_source'].enum_type = _CAMERAINFO_TIMESTAMPSOURCE
+_CAMERAINFO.fields_by_name['lens_pose_reference'].enum_type = _CAMERAINFO_LENSPOSEREFERENCE
 _CAMERAINFO_FOCUSCALIBRATION.containing_type = _CAMERAINFO
 _CAMERAINFO_TIMESTAMPSOURCE.containing_type = _CAMERAINFO
+_CAMERAINFO_LENSPOSEREFERENCE.containing_type = _CAMERAINFO
 _VIDEOFRAMEMETADATA_OISSAMPLE.containing_type = _VIDEOFRAMEMETADATA
 _VIDEOFRAMEMETADATA.fields_by_name['OIS_samples'].message_type = _VIDEOFRAMEMETADATA_OISSAMPLE
 _IMUDATA.fields_by_name['gyro_accuracy'].enum_type = _IMUDATA_ACCURACY
