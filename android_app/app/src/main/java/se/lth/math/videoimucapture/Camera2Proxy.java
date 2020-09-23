@@ -28,11 +28,9 @@ import androidx.annotation.NonNull;
 
 import androidx.preference.PreferenceManager;
 import android.util.Log;
-import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import static java.lang.Math.abs;
@@ -181,63 +179,6 @@ public class Camera2Proxy {
         mPreviewSurfaceTexture = surfaceTexture;
     }
 
-
-    private class NumExpoIso {
-        public Long mNumber;
-        public Long mExposureNanos;
-        public Integer mIso;
-
-        public NumExpoIso(Long number, Long expoNanos, Integer iso) {
-            mNumber = number;
-            mExposureNanos = expoNanos;
-            mIso = iso;
-        }
-    }
-
-    private final int kMaxExpoSamples = 10;
-    private ArrayList<NumExpoIso> expoStats = new ArrayList<>(kMaxExpoSamples);
-
-    private void setExposureAndIso() {
-        Long exposureNanos = CameraCaptureActivity.mDesiredExposureTime;
-        Long desiredIsoL = 30L * 30000000L / exposureNanos;
-        Integer desiredIso = desiredIsoL.intValue();
-        if (!expoStats.isEmpty()) {
-            int index = expoStats.size() / 2;
-            Long actualExpo = expoStats.get(index).mExposureNanos;
-            Integer actualIso = expoStats.get(index).mIso;
-            if (actualExpo <= exposureNanos) {
-                exposureNanos = actualExpo;
-                desiredIso = actualIso;
-            } else {
-                desiredIsoL = actualIso * actualExpo / exposureNanos;
-                desiredIso = desiredIsoL.intValue();
-            }
-        }
-
-        // fix exposure
-        mPreviewRequestBuilder.set(
-                CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_OFF);
-        Range<Long> exposureTimeRange = mCameraCharacteristics.get(
-                CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE);
-        if (exposureTimeRange != null) {
-            Log.d(TAG, "exposure time range " + exposureTimeRange.toString());
-        }
-
-        mPreviewRequestBuilder.set(
-                CaptureRequest.SENSOR_EXPOSURE_TIME, exposureNanos);
-        Log.d(TAG, "Exposure time set to " + exposureNanos);
-
-        // fix ISO
-        Range<Integer> isoRange = mCameraCharacteristics.get(
-                CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE);
-        if (isoRange != null) {
-            Log.d(TAG, "ISO range " + isoRange.toString());
-        }
-
-        mPreviewRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, desiredIso);
-        Log.d(TAG, "ISO set to " + desiredIso);
-    }
-
     private void initPreviewRequest() {
         try {
             mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
@@ -247,13 +188,6 @@ public class Camera2Proxy {
                     CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             mPreviewRequestBuilder.set(
                     CaptureRequest.CONTROL_AWB_MODE, CameraMetadata.CONTROL_AWB_MODE_AUTO);
-
-            // fix focus distance
-            mPreviewRequestBuilder.set(
-                    CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_OFF);
-            mPreviewRequestBuilder.set(
-                    CaptureRequest.LENS_FOCUS_DISTANCE, 0.0f);
-            Log.d(TAG, "Focus distance set to Infinity");
 
             mCameraSettingsManager.updateRequestBuilder(mPreviewRequestBuilder);
 
@@ -359,14 +293,7 @@ public class Camera2Proxy {
 
                     }
 
-
-                    Long number = result.getFrameNumber();
                     Long exposureTimeNs = result.get(CaptureResult.SENSOR_EXPOSURE_TIME);
-                    Integer iso = result.get(CaptureResult.SENSOR_SENSITIVITY);
-                    if (expoStats.size() > kMaxExpoSamples) {
-                        expoStats.subList(0, kMaxExpoSamples / 2).clear();
-                    }
-                    expoStats.add(new NumExpoIso(number, exposureTimeNs, iso));
 
                     Float fl = result.get(CaptureResult.LENS_FOCAL_LENGTH);
 
@@ -510,6 +437,9 @@ public class Camera2Proxy {
     }
 
     void changeManualFocusPoint(float eventX, float eventY, int viewWidth, int viewHeight) {
+        if (!mCameraSettingsManager.focusOnTouch()) {
+            return;
+        }
         final int y = (int) ((eventX / (float) viewWidth) * (float) sensorArraySize.height());
         final int x = (int) ((eventY / (float) viewHeight) * (float) sensorArraySize.width());
         final int halfTouchWidth = 400;
@@ -527,8 +457,6 @@ public class Camera2Proxy {
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
-
-        setExposureAndIso();
 
         mPreviewRequestBuilder.set(CaptureRequest.CONTROL_MODE,
                 CameraMetadata.CONTROL_MODE_AUTO);

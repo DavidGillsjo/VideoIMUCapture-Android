@@ -86,3 +86,6 @@ lint/tmp/
 
 #Python
 __pycache__
+
+#Release
+android_app/app/release

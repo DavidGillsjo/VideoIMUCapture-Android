@@ -2,28 +2,83 @@
 <PreferenceScreen
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <SwitchPreferenceCompat
-        app:key="ois"
-        app:title="Enable OIS"
-        app:summary="Optical Image Stabilization"
-        app:defaultValue="false"/>
+    <PreferenceCategory
+        app:key="general_category"
+        app:title="General">
 
-    <SwitchPreferenceCompat
-        app:key="ois_data"
-        app:title="Enable OIS data"
-        app:summary="Capture Optical Image Stabilization data"
-        app:defaultValue="false" />
+        <ListPreference
+            app:key="video_size"
+            app:title="Video Size"
+            app:persistent="false"
+            app:useSimpleSummaryProvider="true"/>
+    </PreferenceCategory>
 
-    <SwitchPreferenceCompat
-        app:key="dvs"
-        app:title="Enable DVS"
-        app:summary="Digital Video Stabilization"
-        app:defaultValue="false"/>
+    <PreferenceCategory
+        app:key="stabilization_category"
+        app:title="Stabilization">
 
-    <ListPreference
-        app:key="video_size"
-        app:title="Video Size"
-        app:useSimpleSummaryProvider="true"/>
+        <SwitchPreferenceCompat
+            app:key="ois"
+            app:title="Enable OIS"
+            app:persistent="false"
+            app:summary="Optical Image Stabilization" />
+
+        <SwitchPreferenceCompat
+            app:key="ois_data"
+            app:title="Enable OIS data"
+            app:persistent="false"
+            app:summary="Capture Optical Image Stabilization data" />
+
+        <SwitchPreferenceCompat
+            app:key="dvs"
+            app:title="Enable DVS"
+            app:persistent="false"
+            app:summary="Digital Video Stabilization" />
+    </PreferenceCategory>
+
+
+
+    <PreferenceCategory
+        app:key="focus_category"
+        app:title="Auto Focus">
+
+        <ListPreference
+            app:key="focus_mode"
+            app:title="Auto Focus Mode"
+            app:persistent="false"
+            app:useSimpleSummaryProvider="true"/>
+
+        <se.lth.math.videoimucapture.FloatSeekBarPreference
+            app:key="focus_distance"
+            app:title="Focus Distance"
+            app:showSeekBarValue="true"
+            app:persistent="false"
+            app:summary="Diopters [1/m]"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:key="exposure_category"
+        app:title="Auto Exposure">
+        <ListPreference
+            app:key="exposure_mode"
+            app:title="Auto Exposure Mode"
+            app:persistent="false"
+            app:useSimpleSummaryProvider="true"/>
+
+        <se.lth.math.videoimucapture.FloatSeekBarPreference
+            app:key="exposure"
+            app:title="Exposure Time"
+            app:persistent="false"
+            app:showSeekBarValue="true"
+            app:summary="ms"/>
+
+        <SeekBarPreference
+            app:key="iso"
+            app:title="ISO"
+            app:showSeekBarValue="true"
+            app:persistent="false"
+            app:summary="Sensitivity"/>
+    </PreferenceCategory>
 
 
 </PreferenceScreen>

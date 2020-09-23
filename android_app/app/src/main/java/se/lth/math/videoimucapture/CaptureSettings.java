@@ -31,10 +31,14 @@ public class CaptureSettings extends PreferenceFragmentCompat {
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+        /* This will somehow override default values we set when starting the activity.
+           Therefore we set them as not persistent in the XML file.
+         */
         setPreferencesFromResource(R.xml.settings, rootKey);
 
         CameraSettingsManager cameraSettingsManager = ((CameraCaptureActivity) getActivity()).getmCameraSettingsManager();
         cameraSettingsManager.updatePreferences(getPreferenceScreen());
 
     }
+
 }

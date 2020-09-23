@@ -118,8 +118,6 @@ public class CameraCaptureActivity extends AppCompatActivity {
     public static final String TAG = "VIMUC-Main";
     private static final boolean VERBOSE = false;
 
-    static final Long mDesiredExposureTime = 5000000L; // nanoseconds
-
     private Camera2Proxy mCamera2Proxy = null;
     private CameraHandler mCameraHandler;
     private CameraCaptureFragment mCameraCaptureFragment;
