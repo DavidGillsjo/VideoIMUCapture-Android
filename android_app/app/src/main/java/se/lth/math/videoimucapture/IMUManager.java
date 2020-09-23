@@ -71,6 +71,7 @@ public class IMUManager implements SensorEventListener {
 
     public void startRecording(RecordingWriter recordingWriter) {
         mRecordingWriter = recordingWriter;
+        writeMetaData();
         mRecordingInertialData = true;
     }
 
@@ -168,6 +169,16 @@ public class IMUManager implements SensorEventListener {
         }
 
         mRecordingWriter.queueData(imuBuilder.build());
+    }
+
+    private void writeMetaData() {
+        RecordingProtos.IMUInfo.Builder builder = RecordingProtos.IMUInfo.newBuilder()
+                .setGyroInfo(mGyro.toString())
+                .setGyroResolution(mGyro.getResolution())
+                .setAccelInfo(mAccel.toString())
+                .setAccelResolution(mAccel.getResolution());
+
+        mRecordingWriter.queueData(builder.build());
     }
 
     @Override

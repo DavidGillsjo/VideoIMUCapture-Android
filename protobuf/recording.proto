@@ -64,7 +64,10 @@ message VideoFrameMetaData {
 }
 
 message IMUInfo {
-
+  string gyro_info = 1;
+  float gyro_resolution =2;
+  string accel_info = 3;
+  float accel_resolution =4;
 }
 
 message IMUData {

@@ -4735,6 +4735,42 @@ public final class RecordingProtos {
   public interface IMUInfoOrBuilder extends
       // @@protoc_insertion_point(interface_extends:videoimu.IMUInfo)
       com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>string gyro_info = 1;</code>
+     * @return The gyroInfo.
+     */
+    java.lang.String getGyroInfo();
+    /**
+     * <code>string gyro_info = 1;</code>
+     * @return The bytes for gyroInfo.
+     */
+    com.google.protobuf.ByteString
+        getGyroInfoBytes();
+
+    /**
+     * <code>float gyro_resolution = 2;</code>
+     * @return The gyroResolution.
+     */
+    float getGyroResolution();
+
+    /**
+     * <code>string accel_info = 3;</code>
+     * @return The accelInfo.
+     */
+    java.lang.String getAccelInfo();
+    /**
+     * <code>string accel_info = 3;</code>
+     * @return The bytes for accelInfo.
+     */
+    com.google.protobuf.ByteString
+        getAccelInfoBytes();
+
+    /**
+     * <code>float accel_resolution = 4;</code>
+     * @return The accelResolution.
+     */
+    float getAccelResolution();
   }
   /**
    * Protobuf type {@code videoimu.IMUInfo}
@@ -4749,6 +4785,8 @@ public final class RecordingProtos {
       super(builder);
     }
     private IMUInfo() {
+      gyroInfo_ = "";
+      accelInfo_ = "";
     }
 
     @java.lang.Override
@@ -4781,6 +4819,28 @@ public final class RecordingProtos {
             case 0:
               done = true;
               break;
+            case 10: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              gyroInfo_ = s;
+              break;
+            }
+            case 21: {
+
+              gyroResolution_ = input.readFloat();
+              break;
+            }
+            case 26: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              accelInfo_ = s;
+              break;
+            }
+            case 37: {
+
+              accelResolution_ = input.readFloat();
+              break;
+            }
             default: {
               if (!parseUnknownField(
                   input, unknownFields, extensionRegistry, tag)) {
@@ -4813,6 +4873,104 @@ public final class RecordingProtos {
               se.lth.math.videoimucapture.RecordingProtos.IMUInfo.class, se.lth.math.videoimucapture.RecordingProtos.IMUInfo.Builder.class);
     }
 
+    public static final int GYRO_INFO_FIELD_NUMBER = 1;
+    private volatile java.lang.Object gyroInfo_;
+    /**
+     * <code>string gyro_info = 1;</code>
+     * @return The gyroInfo.
+     */
+    @java.lang.Override
+    public java.lang.String getGyroInfo() {
+      java.lang.Object ref = gyroInfo_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        gyroInfo_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string gyro_info = 1;</code>
+     * @return The bytes for gyroInfo.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getGyroInfoBytes() {
+      java.lang.Object ref = gyroInfo_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        gyroInfo_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int GYRO_RESOLUTION_FIELD_NUMBER = 2;
+    private float gyroResolution_;
+    /**
+     * <code>float gyro_resolution = 2;</code>
+     * @return The gyroResolution.
+     */
+    @java.lang.Override
+    public float getGyroResolution() {
+      return gyroResolution_;
+    }
+
+    public static final int ACCEL_INFO_FIELD_NUMBER = 3;
+    private volatile java.lang.Object accelInfo_;
+    /**
+     * <code>string accel_info = 3;</code>
+     * @return The accelInfo.
+     */
+    @java.lang.Override
+    public java.lang.String getAccelInfo() {
+      java.lang.Object ref = accelInfo_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        accelInfo_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string accel_info = 3;</code>
+     * @return The bytes for accelInfo.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getAccelInfoBytes() {
+      java.lang.Object ref = accelInfo_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        accelInfo_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int ACCEL_RESOLUTION_FIELD_NUMBER = 4;
+    private float accelResolution_;
+    /**
+     * <code>float accel_resolution = 4;</code>
+     * @return The accelResolution.
+     */
+    @java.lang.Override
+    public float getAccelResolution() {
+      return accelResolution_;
+    }
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -4827,6 +4985,18 @@ public final class RecordingProtos {
     @java.lang.Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
+      if (!getGyroInfoBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, gyroInfo_);
+      }
+      if (gyroResolution_ != 0F) {
+        output.writeFloat(2, gyroResolution_);
+      }
+      if (!getAccelInfoBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, accelInfo_);
+      }
+      if (accelResolution_ != 0F) {
+        output.writeFloat(4, accelResolution_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -4836,6 +5006,20 @@ public final class RecordingProtos {
       if (size != -1) return size;
 
       size = 0;
+      if (!getGyroInfoBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, gyroInfo_);
+      }
+      if (gyroResolution_ != 0F) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeFloatSize(2, gyroResolution_);
+      }
+      if (!getAccelInfoBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, accelInfo_);
+      }
+      if (accelResolution_ != 0F) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeFloatSize(4, accelResolution_);
+      }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
@@ -4851,6 +5035,16 @@ public final class RecordingProtos {
       }
       se.lth.math.videoimucapture.RecordingProtos.IMUInfo other = (se.lth.math.videoimucapture.RecordingProtos.IMUInfo) obj;
 
+      if (!getGyroInfo()
+          .equals(other.getGyroInfo())) return false;
+      if (java.lang.Float.floatToIntBits(getGyroResolution())
+          != java.lang.Float.floatToIntBits(
+              other.getGyroResolution())) return false;
+      if (!getAccelInfo()
+          .equals(other.getAccelInfo())) return false;
+      if (java.lang.Float.floatToIntBits(getAccelResolution())
+          != java.lang.Float.floatToIntBits(
+              other.getAccelResolution())) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
       return true;
     }
@@ -4862,6 +5056,16 @@ public final class RecordingProtos {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + GYRO_INFO_FIELD_NUMBER;
+      hash = (53 * hash) + getGyroInfo().hashCode();
+      hash = (37 * hash) + GYRO_RESOLUTION_FIELD_NUMBER;
+      hash = (53 * hash) + java.lang.Float.floatToIntBits(
+          getGyroResolution());
+      hash = (37 * hash) + ACCEL_INFO_FIELD_NUMBER;
+      hash = (53 * hash) + getAccelInfo().hashCode();
+      hash = (37 * hash) + ACCEL_RESOLUTION_FIELD_NUMBER;
+      hash = (53 * hash) + java.lang.Float.floatToIntBits(
+          getAccelResolution());
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -4995,6 +5199,14 @@ public final class RecordingProtos {
       @java.lang.Override
       public Builder clear() {
         super.clear();
+        gyroInfo_ = "";
+
+        gyroResolution_ = 0F;
+
+        accelInfo_ = "";
+
+        accelResolution_ = 0F;
+
         return this;
       }
 
@@ -5021,6 +5233,10 @@ public final class RecordingProtos {
       @java.lang.Override
       public se.lth.math.videoimucapture.RecordingProtos.IMUInfo buildPartial() {
         se.lth.math.videoimucapture.RecordingProtos.IMUInfo result = new se.lth.math.videoimucapture.RecordingProtos.IMUInfo(this);
+        result.gyroInfo_ = gyroInfo_;
+        result.gyroResolution_ = gyroResolution_;
+        result.accelInfo_ = accelInfo_;
+        result.accelResolution_ = accelResolution_;
         onBuilt();
         return result;
       }
@@ -5069,6 +5285,20 @@ public final class RecordingProtos {
 
       public Builder mergeFrom(se.lth.math.videoimucapture.RecordingProtos.IMUInfo other) {
         if (other == se.lth.math.videoimucapture.RecordingProtos.IMUInfo.getDefaultInstance()) return this;
+        if (!other.getGyroInfo().isEmpty()) {
+          gyroInfo_ = other.gyroInfo_;
+          onChanged();
+        }
+        if (other.getGyroResolution() != 0F) {
+          setGyroResolution(other.getGyroResolution());
+        }
+        if (!other.getAccelInfo().isEmpty()) {
+          accelInfo_ = other.accelInfo_;
+          onChanged();
+        }
+        if (other.getAccelResolution() != 0F) {
+          setAccelResolution(other.getAccelResolution());
+        }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
@@ -5095,6 +5325,220 @@ public final class RecordingProtos {
             mergeFrom(parsedMessage);
           }
         }
+        return this;
+      }
+
+      private java.lang.Object gyroInfo_ = "";
+      /**
+       * <code>string gyro_info = 1;</code>
+       * @return The gyroInfo.
+       */
+      public java.lang.String getGyroInfo() {
+        java.lang.Object ref = gyroInfo_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          gyroInfo_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string gyro_info = 1;</code>
+       * @return The bytes for gyroInfo.
+       */
+      public com.google.protobuf.ByteString
+          getGyroInfoBytes() {
+        java.lang.Object ref = gyroInfo_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          gyroInfo_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string gyro_info = 1;</code>
+       * @param value The gyroInfo to set.
+       * @return This builder for chaining.
+       */
+      public Builder setGyroInfo(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        gyroInfo_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string gyro_info = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearGyroInfo() {
+        
+        gyroInfo_ = getDefaultInstance().getGyroInfo();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string gyro_info = 1;</code>
+       * @param value The bytes for gyroInfo to set.
+       * @return This builder for chaining.
+       */
+      public Builder setGyroInfoBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        gyroInfo_ = value;
+        onChanged();
+        return this;
+      }
+
+      private float gyroResolution_ ;
+      /**
+       * <code>float gyro_resolution = 2;</code>
+       * @return The gyroResolution.
+       */
+      @java.lang.Override
+      public float getGyroResolution() {
+        return gyroResolution_;
+      }
+      /**
+       * <code>float gyro_resolution = 2;</code>
+       * @param value The gyroResolution to set.
+       * @return This builder for chaining.
+       */
+      public Builder setGyroResolution(float value) {
+        
+        gyroResolution_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>float gyro_resolution = 2;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearGyroResolution() {
+        
+        gyroResolution_ = 0F;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object accelInfo_ = "";
+      /**
+       * <code>string accel_info = 3;</code>
+       * @return The accelInfo.
+       */
+      public java.lang.String getAccelInfo() {
+        java.lang.Object ref = accelInfo_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          accelInfo_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string accel_info = 3;</code>
+       * @return The bytes for accelInfo.
+       */
+      public com.google.protobuf.ByteString
+          getAccelInfoBytes() {
+        java.lang.Object ref = accelInfo_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          accelInfo_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string accel_info = 3;</code>
+       * @param value The accelInfo to set.
+       * @return This builder for chaining.
+       */
+      public Builder setAccelInfo(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        accelInfo_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string accel_info = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearAccelInfo() {
+        
+        accelInfo_ = getDefaultInstance().getAccelInfo();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string accel_info = 3;</code>
+       * @param value The bytes for accelInfo to set.
+       * @return This builder for chaining.
+       */
+      public Builder setAccelInfoBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        accelInfo_ = value;
+        onChanged();
+        return this;
+      }
+
+      private float accelResolution_ ;
+      /**
+       * <code>float accel_resolution = 4;</code>
+       * @return The accelResolution.
+       */
+      @java.lang.Override
+      public float getAccelResolution() {
+        return accelResolution_;
+      }
+      /**
+       * <code>float accel_resolution = 4;</code>
+       * @param value The accelResolution to set.
+       * @return This builder for chaining.
+       */
+      public Builder setAccelResolution(float value) {
+        
+        accelResolution_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>float accel_resolution = 4;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearAccelResolution() {
+        
+        accelResolution_ = 0F;
+        onChanged();
         return this;
       }
       @java.lang.Override
@@ -10226,27 +10670,30 @@ public final class RecordingProtos {
       "distance_diopters\030\t \001(\002\022;\n\013OIS_samples\030\n" +
       " \003(\0132&.videoimu.VideoFrameMetaData.OISSa" +
       "mple\032>\n\tOISSample\022\017\n\007time_ns\030\001 \001(\003\022\017\n\007x_" +
-      "shift\030\002 \001(\002\022\017\n\007y_shift\030\003 \001(\002\"\t\n\007IMUInfo\"" +
-      "\201\002\n\007IMUData\022\017\n\007time_ns\030\001 \001(\003\022\014\n\004gyro\030\002 \003" +
-      "(\002\022\022\n\ngyro_drift\030\003 \003(\002\022\r\n\005accel\030\004 \003(\002\022\022\n" +
-      "\naccel_bias\030\005 \003(\002\0221\n\rgyro_accuracy\030\006 \001(\016" +
-      "2\032.videoimu.IMUData.Accuracy\0222\n\016accel_ac" +
-      "curacy\030\007 \001(\0162\032.videoimu.IMUData.Accuracy" +
-      "\"9\n\010Accuracy\022\016\n\nUNRELIABLE\020\000\022\007\n\003LOW\020\001\022\n\n" +
-      "\006MEDIUM\020\002\022\010\n\004HIGH\020\003\"\336\001\n\020VideoCaptureData" +
-      "\022(\n\004time\030\001 \001(\0132\032.google.protobuf.Timesta" +
-      "mp\022)\n\013camera_meta\030\002 \001(\0132\024.videoimu.Camer" +
-      "aInfo\022#\n\010imu_meta\030\003 \001(\0132\021.videoimu.IMUIn" +
-      "fo\022\036\n\003imu\030\004 \003(\0132\021.videoimu.IMUData\0220\n\nvi" +
-      "deo_meta\030\005 \003(\0132\034.videoimu.VideoFrameMeta" +
-      "Data\"\375\001\n\016MessageWrapper\022+\n\013camera_meta\030\001" +
-      " \001(\0132\024.videoimu.CameraInfoH\000\022%\n\010imu_data" +
-      "\030\002 \001(\0132\021.videoimu.IMUDataH\000\022%\n\010imu_meta\030" +
-      "\003 \001(\0132\021.videoimu.IMUInfoH\000\0222\n\nframe_meta" +
-      "\030\004 \001(\0132\034.videoimu.VideoFrameMetaDataH\000\0225" +
-      "\n\nframe_time\030\005 \001(\0132\037.videoimu.VideoFrame" +
-      "ToTimestampH\000B\005\n\003msgB.\n\033se.lth.math.vide" +
-      "oimucaptureB\017RecordingProtosb\006proto3"
+      "shift\030\002 \001(\002\022\017\n\007y_shift\030\003 \001(\002\"c\n\007IMUInfo\022" +
+      "\021\n\tgyro_info\030\001 \001(\t\022\027\n\017gyro_resolution\030\002 " +
+      "\001(\002\022\022\n\naccel_info\030\003 \001(\t\022\030\n\020accel_resolut" +
+      "ion\030\004 \001(\002\"\201\002\n\007IMUData\022\017\n\007time_ns\030\001 \001(\003\022\014" +
+      "\n\004gyro\030\002 \003(\002\022\022\n\ngyro_drift\030\003 \003(\002\022\r\n\005acce" +
+      "l\030\004 \003(\002\022\022\n\naccel_bias\030\005 \003(\002\0221\n\rgyro_accu" +
+      "racy\030\006 \001(\0162\032.videoimu.IMUData.Accuracy\0222" +
+      "\n\016accel_accuracy\030\007 \001(\0162\032.videoimu.IMUDat" +
+      "a.Accuracy\"9\n\010Accuracy\022\016\n\nUNRELIABLE\020\000\022\007" +
+      "\n\003LOW\020\001\022\n\n\006MEDIUM\020\002\022\010\n\004HIGH\020\003\"\336\001\n\020VideoC" +
+      "aptureData\022(\n\004time\030\001 \001(\0132\032.google.protob" +
+      "uf.Timestamp\022)\n\013camera_meta\030\002 \001(\0132\024.vide" +
+      "oimu.CameraInfo\022#\n\010imu_meta\030\003 \001(\0132\021.vide" +
+      "oimu.IMUInfo\022\036\n\003imu\030\004 \003(\0132\021.videoimu.IMU" +
+      "Data\0220\n\nvideo_meta\030\005 \003(\0132\034.videoimu.Vide" +
+      "oFrameMetaData\"\375\001\n\016MessageWrapper\022+\n\013cam" +
+      "era_meta\030\001 \001(\0132\024.videoimu.CameraInfoH\000\022%" +
+      "\n\010imu_data\030\002 \001(\0132\021.videoimu.IMUDataH\000\022%\n" +
+      "\010imu_meta\030\003 \001(\0132\021.videoimu.IMUInfoH\000\0222\n\n" +
+      "frame_meta\030\004 \001(\0132\034.videoimu.VideoFrameMe" +
+      "taDataH\000\0225\n\nframe_time\030\005 \001(\0132\037.videoimu." +
+      "VideoFrameToTimestampH\000B\005\n\003msgB.\n\033se.lth" +
+      ".math.videoimucaptureB\017RecordingProtosb\006" +
+      "proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -10282,7 +10729,7 @@ public final class RecordingProtos {
     internal_static_videoimu_IMUInfo_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_videoimu_IMUInfo_descriptor,
-        new java.lang.String[] { });
+        new java.lang.String[] { "GyroInfo", "GyroResolution", "AccelInfo", "AccelResolution", });
     internal_static_videoimu_IMUData_descriptor =
       getDescriptor().getMessageTypes().get(4);
     internal_static_videoimu_IMUData_fieldAccessorTable = new
