@@ -16,6 +16,7 @@ import androidx.preference.Preference;
 import androidx.preference.PreferenceManager;
 import androidx.preference.PreferenceScreen;
 import androidx.preference.SeekBarPreference;
+import androidx.preference.SwitchPreferenceCompat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -194,6 +195,7 @@ class CameraSettingBoolean extends CameraSetting {
         return mSharedPreferences.getBoolean(mPrefKey, false);
     }
 
+    @Override
     public void updateCaptureRequest(CaptureRequest.Builder builder) {
         if (!mConfigurable) {
             return;
@@ -205,6 +207,12 @@ class CameraSettingBoolean extends CameraSetting {
         }
     }
 
+    @Override
+    protected void updatePreference(Preference preference) {
+
+        ((SwitchPreferenceCompat) preference).setChecked(isOn());
+        super.updatePreference(preference);
+    }
 }
 
 class CameraSettingVideoSize extends CameraSetting {

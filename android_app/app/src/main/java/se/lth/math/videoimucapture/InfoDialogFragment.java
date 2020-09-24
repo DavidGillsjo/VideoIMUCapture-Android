@@ -1,7 +1,6 @@
 package se.lth.math.videoimucapture;
 
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AlertDialog;
@@ -12,15 +11,12 @@ public class InfoDialogFragment extends DialogFragment {
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         //Get result folder
         Bundle args = getArguments();
-        String msg_string = String.format(
-                getResources().getString(R.string.info_dialog_message),
-                args.getString("result_root")
-        );
+
 
         // Use the Builder class for convenient dialog construction
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle(R.string.info_dialog_title)
-                .setMessage(msg_string)
+        builder.setTitle(args.getInt("title"))
+                .setMessage(args.getString("message"))
                 .setPositiveButton(R.string.info_dialog_button, null);
         // Create the AlertDialog object and return it
         return builder.create();

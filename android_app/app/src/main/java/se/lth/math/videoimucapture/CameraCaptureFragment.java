@@ -6,7 +6,6 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.util.Size;
 import android.view.Display;
@@ -15,6 +14,8 @@ import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -67,6 +68,9 @@ public class CameraCaptureFragment extends Fragment
     private Camera2Proxy getmCamera2Proxy() {
         return ((CameraCaptureActivity) getActivity()).getmCamera2Proxy();
     };
+    private CameraSettingsManager getmCameraSettingsManager() {
+        return ((CameraCaptureActivity) getActivity()).getmCameraSettingsManager();
+    };
 
     private String renewOutputDir() {
         SimpleDateFormat dateFormat =
@@ -104,6 +108,15 @@ public class CameraCaptureFragment extends Fragment
 
         FloatingActionButton button = (FloatingActionButton) rootView.findViewById(R.id.toggleRecording_button);
         button.setOnClickListener(this::clickToggleRecording);
+
+        FloatingActionButton warning_button = (FloatingActionButton) rootView.findViewById(R.id.OIS_warning_button);
+        Animation anim = new AlphaAnimation(0.8f, 1.0f);
+        anim.setDuration(500); //Manage the blinking time with this parameter
+        anim.setStartOffset(20);
+        anim.setRepeatMode(Animation.REVERSE);
+        anim.setRepeatCount(Animation.INFINITE);
+        warning_button.startAnimation(anim);
+        warning_button.setOnClickListener(this::clickWarning);
 
         return rootView;
     }
@@ -209,6 +222,35 @@ public class CameraCaptureFragment extends Fragment
         updateControls();
     }
 
+    public void clickWarning(View view) {
+        //Display warning dialog
+        CameraSettingsManager cameraSettingsManager = getmCameraSettingsManager();
+
+        Bundle args = new Bundle();
+        args.putInt("title", R.string.warning_dialog_title);
+
+
+        StringBuilder builder = new StringBuilder();
+        if (cameraSettingsManager.OISEnabled()) {
+            builder.append("- ");
+            if (cameraSettingsManager.OISDataEnabled())
+                builder.append(getResources().getString(R.string.warning_text_ois_with_data));
+            else
+                builder.append(getResources().getString(R.string.warning_text_ois_no_data));
+            builder.append("\n\n");
+        }
+        if (cameraSettingsManager.DVSEnabled()) {
+            builder.append("- ");
+            builder.append(getResources().getString(R.string.warning_text_dvs));
+        }
+
+        args.putString("message", builder.toString());
+
+        InfoDialogFragment newFragment = new InfoDialogFragment();
+        newFragment.setArguments(args);
+        newFragment.show(getActivity().getSupportFragmentManager(), "warning");
+    }
+
     private void startRecording() {
         Camera2Proxy camera2Proxy = getmCamera2Proxy();
         String outputDir = renewOutputDir();
@@ -258,9 +300,7 @@ public class CameraCaptureFragment extends Fragment
 
     public void updateCaptureResultPanel(
             final Float fl,
-            final Long exposureTimeNs,
-            final boolean oisActive,
-            final boolean disActive) {
+            final Long exposureTimeNs) {
         final String sfl = String.format(Locale.getDefault(), "FL: %.3f", fl);
         final String sexpotime =
                 exposureTimeNs == null ?
@@ -268,13 +308,11 @@ public class CameraCaptureFragment extends Fragment
                         String.format(Locale.getDefault(), "Exp: %.2f ms",
                                 exposureTimeNs / 1000000.0);
 
-        final String oisMode = oisActive ? "OIS: ON" : "OIS: OFF";
-        final String disMode = disActive ? "DIS: ON" : "DIS: OFF";
         getActivity().runOnUiThread(new Runnable() {
 
             @Override
             public void run() {
-                mCaptureResultText.setText("|" + sfl + "|" + sexpotime + "|" + oisMode + "|" + disMode + "|");
+                mCaptureResultText.setText("|" + sfl + "|" + sexpotime + "|");
             }
         });
     }
@@ -288,6 +326,14 @@ public class CameraCaptureFragment extends Fragment
                 R.drawable.ic_stop_record : R.drawable.ic_start_record;
         Log.d(TAG, "DRAWING: " + id);
         button.setImageResource(id);
+
+        FloatingActionButton warning = (FloatingActionButton) getView().findViewById(R.id.OIS_warning_button);
+        CameraSettingsManager cameraSettingsManager = getmCameraSettingsManager();
+        if (cameraSettingsManager != null && cameraSettingsManager.OISEnabled()) {
+            warning.setVisibility(View.VISIBLE);
+        } else {
+            warning.setVisibility(View.GONE);
+        }
     }
 
     @Override

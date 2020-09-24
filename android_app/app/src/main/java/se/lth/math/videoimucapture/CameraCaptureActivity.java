@@ -18,11 +18,8 @@ package se.lth.math.videoimucapture;
 
 import androidx.fragment.app.Fragment;
 
-import android.content.Intent;
 import android.graphics.SurfaceTexture;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import androidx.annotation.NonNull;
@@ -246,7 +243,11 @@ public class CameraCaptureActivity extends AppCompatActivity {
 
     public void displayInfo(MenuItem unused) {
         Bundle args = new Bundle();
-        args.putString("result_root", getResultRoot());
+        args.putInt("title", R.string.info_dialog_title);
+        args.putString("message", String.format(
+                getResources().getString(R.string.info_dialog_message),
+                getResultRoot()
+        ));
 
         InfoDialogFragment newFragment = new InfoDialogFragment();
         newFragment.setArguments(args);
@@ -327,18 +328,21 @@ public class CameraCaptureActivity extends AppCompatActivity {
                 Log.w(TAG, "CameraHandler.handleMessage: activity is null");
                 return;
             }
-
+            Camera2Proxy camera2proxy = activity.getmCamera2Proxy();
             switch (what) {
                 case MSG_SET_SURFACE_TEXTURE:
+                    if (camera2proxy == null) {
+                        //Wait for camera to be up, push back message
+                        this.sendMessageDelayed(inputMessage, 10);
+                        return;
+                    }
                     activity.getmCameraCaptureFragment().handleSetSurfaceTexture((SurfaceTexture) inputMessage.obj);
                     break;
                 case MSG_DISABLE_SURFACE_TEXTURE:
                     activity.getmCameraCaptureFragment().handleDisableSurfaceTexture((SurfaceTexture) inputMessage.obj);
                     break;
                 case MSG_MANUAL_FOCUS:
-                    Camera2Proxy camera2proxy = activity.getmCamera2Proxy();
                     if (camera2proxy != null) {
-                        // TODO(jhuai): analyze the mechanism behind lock AF upon touch,
                         // make sure it won't cause sync issues with other Camera2Proxy methods
                         camera2proxy.changeManualFocusPoint(
                                 eventX, eventY, viewWidth, viewHeight);

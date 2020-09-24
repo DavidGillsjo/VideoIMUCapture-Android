@@ -308,8 +308,8 @@ public class Camera2Proxy {
                     if (mRecordingMetadata) {
                         writeCaptureData(result, focal_length_pix);
                     }
-                    ((CameraCaptureActivity) mActivity).getmCameraCaptureFragment().updateCaptureResultPanel(
-                            focal_length_pix, exposureTimeNs, mCameraSettingsManager.OISEnabled(),  mCameraSettingsManager.DVSEnabled());
+                    ((CameraCaptureActivity) mActivity).getmCameraCaptureFragment()
+                            .updateCaptureResultPanel(focal_length_pix, exposureTimeNs);
                 }
 
                 @Override

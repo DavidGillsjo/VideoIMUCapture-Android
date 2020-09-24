@@ -37,9 +37,10 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center" />
+
     </se.lth.math.videoimucapture.AspectFrameLayout>
 
-    <TextView
+    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/cameraParams_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -50,7 +51,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/appBarLayout" />
 
-    <TextView
+    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/captureResult_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -60,6 +61,20 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/cameraParams_text" />
 
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/OIS_warning_button"
+        app:fabSize="mini"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:layout_gravity="center|bottom"
+        android:contentDescription="@string/warning_icon_desc"
+        android:src="@drawable/ic_warning_24"
+        app:tint="@null"
+        app:backgroundTint="@null"
+        app:layout_constraintEnd_toEndOf="@+id/cameraPreview_afl"
+        app:layout_constraintTop_toBottomOf="@+id/appBarLayout" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/toggleRecording_button"

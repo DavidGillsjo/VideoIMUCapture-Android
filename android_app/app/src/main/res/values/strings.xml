@@ -14,4 +14,9 @@
     <string name="info_dialog_title">Information</string>
     <string name="info_dialog_message">Records Video, IMU and Camera Meta Data to this location:\n %s</string>
     <string name="info_dialog_button">OK</string>
+    <string name="warning_icon_desc">Warning on Stabilization</string>
+    <string name="warning_dialog_title">Warning</string>
+    <string name="warning_text_ois_with_data">Optical Image Stabilization (OIS) is enabled, you need to compensate for this with the OIS sample data during 3D reconstruction.</string>
+    <string name="warning_text_ois_no_data">Optical Image Stabilization (OIS) is enabled but OIS data is not stored, which means that the saved camera parameters are not valid. Please enable OIS data in settings.</string>
+    <string name="warning_text_dvs">Digital Video Stabilization is enabled, the stored camera parameters will not be correct.</string>
 </resources>
