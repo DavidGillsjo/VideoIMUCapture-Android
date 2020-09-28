@@ -20,3 +20,9 @@ This code is forked from [mobile-sensor-ar-logger](https://github.com/OSUPCVLab/
 - Stores IMU data and all frame meta data in a protobuf file, check [recording.proto](https://github.com/DavidGillsjo/VideoIMUCapture-Android/blob/master/protobuf/recording.proto) to see what data is included
 - Display warning if OIS or DVS is enabled since this affects the camera parameters
 - Clear settings menu for configuring video resolution, OIS, DVS, Auto focus and Auto exposure.
+
+# Install
+To install on your Android device go to the [Release page](https://github.com/DavidGillsjo/VideoIMUCapture-Android/releases) from your Android device browser and download the latest `.apk` file. You will need to give your browser permission to install the application, but Android should guide you through the necessary steps.
+
+# Feedback
+If you find any bugs or have feature requests, please create an [issue](https://github.com/DavidGillsjo/VideoIMUCapture-Android/issues) on this Github page.
