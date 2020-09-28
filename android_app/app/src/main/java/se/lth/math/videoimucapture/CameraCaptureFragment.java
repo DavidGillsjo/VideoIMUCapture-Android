@@ -6,8 +6,6 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.util.Size;
 import android.view.Display;
@@ -345,7 +343,6 @@ public class CameraCaptureFragment extends Fragment
             else
                 warning.setVisibility(View.GONE);
         }
-
     }
 
     @Override
