@@ -287,6 +287,8 @@ public class CameraCaptureActivity extends AppCompatActivity {
         public static final int MSG_SET_SURFACE_TEXTURE = 0;
         public static final int MSG_DISABLE_SURFACE_TEXTURE = 1;
         public static final int MSG_MANUAL_FOCUS = 2;
+        //Not camera control, but camera related  and need to run on UI thread.
+        public static final int MSG_UPDATE_WARNING = 3;
 
         private int viewWidth = 0;
         private int viewHeight = 0;
@@ -347,6 +349,9 @@ public class CameraCaptureActivity extends AppCompatActivity {
                         camera2proxy.changeManualFocusPoint(
                                 eventX, eventY, viewWidth, viewHeight);
                     }
+                    break;
+                case MSG_UPDATE_WARNING:
+                    activity.getmCameraCaptureFragment().updateControls();
                     break;
                 default:
                     throw new RuntimeException("unknown msg " + what);

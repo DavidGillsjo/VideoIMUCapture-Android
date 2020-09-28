@@ -6,6 +6,8 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.util.Size;
 import android.view.Display;
@@ -320,7 +322,7 @@ public class CameraCaptureFragment extends Fragment
     /**
      * Updates the on-screen controls to reflect the current state of the app.
      */
-    private void updateControls() {
+    public void updateControls() {
         FloatingActionButton button = (FloatingActionButton) getView().findViewById(R.id.toggleRecording_button);
         int id = mRecordingEnabled ?
                 R.drawable.ic_stop_record : R.drawable.ic_start_record;
@@ -329,11 +331,21 @@ public class CameraCaptureFragment extends Fragment
 
         FloatingActionButton warning = (FloatingActionButton) getView().findViewById(R.id.OIS_warning_button);
         CameraSettingsManager cameraSettingsManager = getmCameraSettingsManager();
-        if (cameraSettingsManager != null && cameraSettingsManager.OISEnabled()) {
-            warning.setVisibility(View.VISIBLE);
-        } else {
+        if ((cameraSettingsManager == null) || !cameraSettingsManager.isInitialized()) {
+            // Camera settings not ready yet, may be due to slow start or waiting for camera permission. Post delayed call.
+            getmCameraHandler().sendMessageDelayed(
+                    getmCameraHandler().obtainMessage(CameraCaptureActivity.CameraHandler.MSG_UPDATE_WARNING),
+                    200
+            );
             warning.setVisibility(View.GONE);
+        } else {
+            // We have camera settings, update warning accordingly.
+            if (cameraSettingsManager.OISEnabled() || cameraSettingsManager.DVSEnabled())
+                warning.setVisibility(View.VISIBLE);
+            else
+                warning.setVisibility(View.GONE);
         }
+
     }
 
     @Override

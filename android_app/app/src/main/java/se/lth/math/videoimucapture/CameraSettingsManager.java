@@ -106,6 +106,10 @@ public class CameraSettingsManager {
 
     }
 
+    public Boolean isInitialized() {
+        return mInitialized;
+    }
+
     public Boolean OISEnabled() {
         return ((CameraSettingBoolean) mCameraSettings.get(Setting.OIS)).isOn();
     }
