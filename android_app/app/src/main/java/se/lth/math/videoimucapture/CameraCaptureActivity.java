@@ -166,17 +166,22 @@ public class CameraCaptureActivity extends AppCompatActivity {
         // Obtain the FirebaseAnalytics instance.
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
-        if (savedInstanceState == null) {
-            CameraCaptureFragment fragment = new CameraCaptureFragment();
-            getSupportFragmentManager()
-                    .beginTransaction()
-                    .add(R.id.main_content, fragment)
-                    .commit();
+        if ((savedInstanceState == null) && PermissionHelper.hasCameraPermission(this)) {
+            createCameraCaptureFragment();
+        } else {
+            PermissionHelper.requestCameraPermission(this, false);
         }
 
         Log.d(TAG, "onCreate complete: " + this);
     }
 
+    private void  createCameraCaptureFragment() {
+        CameraCaptureFragment fragment = new CameraCaptureFragment();
+        getSupportFragmentManager()
+                .beginTransaction()
+                .add(R.id.main_content, fragment)
+                .commit();
+    }
 
     @Override
     protected void onResume() {
@@ -188,15 +193,11 @@ public class CameraCaptureActivity extends AppCompatActivity {
 
     public void initializeCamera() {
         Log.d(TAG, "acquiring camera");
-        if (PermissionHelper.hasCameraPermission(this)) {
-            if (mCamera2Proxy == null) {
-                mCamera2Proxy = new Camera2Proxy(this, mCameraSettingsManager);
-                Size previewSize =
-                        mCamera2Proxy.configureCamera();
-                mCameraCaptureFragment.setLayoutAspectRatio(previewSize);
-            }
-        } else {
-            PermissionHelper.requestCameraPermission(this, false);
+        if (mCamera2Proxy == null) {
+            mCamera2Proxy = new Camera2Proxy(this, mCameraSettingsManager);
+            Size previewSize =
+                    mCamera2Proxy.configureCamera();
+            mCameraCaptureFragment.setLayoutAspectRatio(previewSize);
         }
     }
 
@@ -209,7 +210,7 @@ public class CameraCaptureActivity extends AppCompatActivity {
     }
 
     protected void onPause() {
-        Log.d(TAG, "onPause");
+        Log.d(TAG, "onStop");
         super.onPause();
         // no more frame metadata will be saved during pause
 
@@ -263,11 +264,8 @@ public class CameraCaptureActivity extends AppCompatActivity {
             PermissionHelper.launchPermissionSettings(this);
             finish();
         } else {
-            mCamera2Proxy = new Camera2Proxy(this, mCameraSettingsManager);
-            Size previewSize = mCamera2Proxy.configureCamera();
-            // Assumes the fragment is running
-            mCameraCaptureFragment.setLayoutAspectRatio(previewSize);
-
+            // Now have permission, start fragment
+            createCameraCaptureFragment();
         }
     }
 
@@ -335,7 +333,7 @@ public class CameraCaptureActivity extends AppCompatActivity {
                 case MSG_SET_SURFACE_TEXTURE:
                     if (camera2proxy == null) {
                         //Wait for camera to be up, push back message
-                        this.sendMessageDelayed(inputMessage, 10);
+                        this.sendMessageDelayed(Message.obtain(inputMessage), 100);
                         return;
                     }
                     activity.getmCameraCaptureFragment().handleSetSurfaceTexture((SurfaceTexture) inputMessage.obj);
