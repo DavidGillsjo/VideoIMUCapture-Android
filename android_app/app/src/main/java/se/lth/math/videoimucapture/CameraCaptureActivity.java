@@ -210,7 +210,7 @@ public class CameraCaptureActivity extends AppCompatActivity {
     }
 
     protected void onPause() {
-        Log.d(TAG, "onStop");
+        Log.d(TAG, "onPause");
         super.onPause();
         // no more frame metadata will be saved during pause
 
