@@ -4,13 +4,15 @@
         <item name="colorPrimaryVariant">@color/colorPrimaryVariant</item>
         <item name="colorSecondary">@color/colorSecondary</item>
         <item name="colorSecondaryVariant">@color/colorSecondaryVariant</item>-->
-
         <item name="preferenceTheme">@style/Theme.MyApp.PreferenceThemeOverlay</item>
     </style>
 
     <!--  Change PreferenceFragmentCompat Theme to our layout.  -->
     <style name="Theme.MyApp.PreferenceThemeOverlay" parent="PreferenceThemeOverlay">
-        <item name="android:layout">@layout/settings_activity</item>
+        <item name="android:layout">@layout/settings_fragment</item>
+    </style>
+
+    <style name="TextAppearance.MyApp.Overlay" parent="TextAppearance.MaterialComponents.Body1">
     </style>
 
 </resources>

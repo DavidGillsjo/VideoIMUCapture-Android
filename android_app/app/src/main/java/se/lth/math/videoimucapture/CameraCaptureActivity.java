@@ -22,20 +22,19 @@ import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.util.Log;
 import android.util.Size;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
-import android.widget.Toast;
+import android.view.View;
+import android.view.ViewGroup;
 
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.analytics.FirebaseAnalytics;
 
-import java.io.File;
 import java.lang.ref.WeakReference;
-
-import static androidx.core.content.FileProvider.getUriForFile;
 
 /**
  * Shows the camera preview on screen while simultaneously recording it to a .mp4 file.
@@ -113,11 +112,14 @@ import static androidx.core.content.FileProvider.getUriForFile;
  */
 public class CameraCaptureActivity extends AppCompatActivity {
     public static final String TAG = "VIMUC-Main";
+    public static final String FRAGMENT_TOOLBAR_TAG = "CaptureToolbar";
+    public static final String FRAGMENT_MAIN_TAG = "CaptureWindow";
     private static final boolean VERBOSE = false;
 
     private Camera2Proxy mCamera2Proxy = null;
     private CameraHandler mCameraHandler;
-    private CameraCaptureFragment mCameraCaptureFragment;
+    private CameraCaptureFragment mCameraCaptureFragment = null;
+    private PermissionRationaleFragment mPermissionFragment = null;
     private CameraSettingsManager mCameraSettingsManager;
 
     private FirebaseAnalytics mFirebaseAnalytics;
@@ -153,7 +155,7 @@ public class CameraCaptureActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.main_activity);
 
         // Define a handler that receives camera-control messages from other threads.  All calls
         // to Camera must be made on the same thread.  Note we create this before the renderer
@@ -166,26 +168,92 @@ public class CameraCaptureActivity extends AppCompatActivity {
         // Obtain the FirebaseAnalytics instance.
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
-        if ((savedInstanceState == null) && PermissionHelper.hasCameraPermission(this)) {
-            createCameraCaptureFragment();
-        } else {
-            PermissionHelper.requestCameraPermission(this, false);
+        if (savedInstanceState == null) {
+            ToolBarFragment fragment = new ToolBarFragment();
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .add(R.id.main_content, fragment, FRAGMENT_TOOLBAR_TAG)
+                    .commit();
+            if (PermissionHelper.hasCameraPermission(this)) {
+                createCameraCaptureFragment();
+            }
         }
-
         Log.d(TAG, "onCreate complete: " + this);
     }
 
+    public static class ToolBarFragment extends Fragment {
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                                 Bundle savedInstanceState) {
+            return inflater.inflate(R.layout.capture_toolbar_fragment, container, false);
+        }
+    }
+
+    public static class PermissionRationaleFragment extends Fragment {
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                                 Bundle savedInstanceState) {
+            View rootView = inflater.inflate(R.layout.permission_fragment, container, false);
+
+            rootView.findViewById(R.id.grant_permission_button).setOnClickListener(this::onGrantClick);
+            rootView.findViewById(R.id.exit_permission_button).setOnClickListener(this::onExitClick);
+            return rootView;
+        }
+
+        private void onGrantClick(View unused) {
+            PermissionHelper.requestCameraPermission(getActivity());
+        }
+
+        private void onExitClick(View unused) {
+            getActivity().finish();
+        }
+    }
+
     private void  createCameraCaptureFragment() {
+        MaterialToolbar bar = (MaterialToolbar) findViewById(R.id.topAppBar);
+        bar.getMenu().findItem(R.id.settings).setEnabled(true);
         CameraCaptureFragment fragment = new CameraCaptureFragment();
         getSupportFragmentManager()
                 .beginTransaction()
-                .add(R.id.main_content, fragment)
+                .add(R.id.main_content, fragment, FRAGMENT_MAIN_TAG)
+                .commit();
+    }
+
+    private void  createPermissionFragment() {
+        MaterialToolbar bar = (MaterialToolbar) findViewById(R.id.topAppBar);
+        bar.getMenu().findItem(R.id.settings).setEnabled(false);
+        PermissionRationaleFragment fragment = new PermissionRationaleFragment();
+        getSupportFragmentManager()
+                .beginTransaction()
+                .add(R.id.main_content, fragment, FRAGMENT_MAIN_TAG)
                 .commit();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+
+        /*This block is only used if we did not have camera permission in onCreate
+        If we don't have permission and haven't asked the user before, simply ask.
+        If we asked previously but got denied, show permission fragment with information.
+        If user accepts, the onResume will be called again (app pause during prompt)
+        and we need to create the capture fragment.
+         */
+        if (!PermissionHelper.hasCameraPermission(this)) {
+            // We don't have permission to use camera
+            if (PermissionHelper.mustShowRationale(this)) {
+                createPermissionFragment();
+            }
+            else {
+                PermissionHelper.requestCameraPermission(this);
+            }
+        } else if (mCameraCaptureFragment == null) {
+            // We now have permission, but have no capture fragment yet.
+            if (mPermissionFragment != null) {
+                getSupportFragmentManager().beginTransaction().remove(mPermissionFragment).commit();
+            }
+            createCameraCaptureFragment();
+        }
 
         mImuManager.register();
         Log.d(TAG, "onResume complete: " + this);
@@ -230,6 +298,8 @@ public class CameraCaptureActivity extends AppCompatActivity {
     public void onAttachFragment(Fragment fragment) {
         if (fragment instanceof CameraCaptureFragment) {
             mCameraCaptureFragment = (CameraCaptureFragment) fragment;
+        } else if (fragment instanceof PermissionRationaleFragment) {
+            mPermissionFragment = (PermissionRationaleFragment) fragment;
         }
     }
 
@@ -255,19 +325,6 @@ public class CameraCaptureActivity extends AppCompatActivity {
         newFragment.show(getSupportFragmentManager(), "info");
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (!PermissionHelper.hasCameraPermission(this)) {
-            Toast.makeText(this,
-                    "Camera permission is needed to run this application", Toast.LENGTH_LONG).show();
-            PermissionHelper.launchPermissionSettings(this);
-            finish();
-        } else {
-            // Now have permission, start fragment
-            createCameraCaptureFragment();
-        }
-    }
 
     public String getResultRoot() {
         return getExternalFilesDir(null).getAbsolutePath();

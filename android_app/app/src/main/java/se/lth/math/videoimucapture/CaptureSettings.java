@@ -24,7 +24,7 @@ public class CaptureSettings extends PreferenceFragmentCompat {
             @Override
             public void onClick(View v) {
                 // back button pressed
-                getFragmentManager().popBackStackImmediate();
+                getActivity().getSupportFragmentManager().popBackStackImmediate();
             }
         });
     }

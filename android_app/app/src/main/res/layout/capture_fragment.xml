@@ -1,32 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/camera_capture"
+    android:layout_height="wrap_content"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_weight="1"
     tools:context="se.lth.math.videoimucapture.CameraCaptureFragment">
-
-    <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/appBarLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/topAppBar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:menu="@menu/camera"
-            app:title="@string/camera_page_title" />
-
-    </com.google.android.material.appbar.AppBarLayout>
 
     <se.lth.math.videoimucapture.AspectFrameLayout
         android:id="@+id/cameraPreview_afl"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_constraintTop_toBottomOf="@+id/appBarLayout">
+        android:layout_height="match_parent">
 
         <se.lth.math.videoimucapture.SampleGLView
             android:id="@+id/cameraPreview_surfaceView"
@@ -43,9 +28,9 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:text="[?]"
-        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:textAppearance="@style/TextAppearance.MyApp.Overlay"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/appBarLayout" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/captureResult_text"
@@ -54,6 +39,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:text="focal length : exposure time"
+        android:textAppearance="@style/TextAppearance.MyApp.Overlay"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/cameraParams_text" />
 
@@ -69,7 +55,7 @@
         app:backgroundTint="@null"
         app:fabSize="mini"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/appBarLayout"
+        app:layout_constraintTop_toTopOf="parent"
         app:tint="@null" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton

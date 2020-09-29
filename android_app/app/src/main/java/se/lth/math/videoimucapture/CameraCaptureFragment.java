@@ -102,7 +102,7 @@ public class CameraCaptureFragment extends Fragment
                              @Nullable Bundle savedInstanceState) {
         Log.d(TAG, "onCreateView: " + this);
         View rootView = inflater.inflate(
-                R.layout.activity_camera_capture,
+                R.layout.capture_fragment,
                 container,
                 false);
 

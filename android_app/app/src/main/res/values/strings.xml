@@ -19,4 +19,7 @@
     <string name="warning_text_ois_with_data">Optical Image Stabilization (OIS) is enabled, you need to compensate for this with the OIS sample data during 3D reconstruction.</string>
     <string name="warning_text_ois_no_data">Optical Image Stabilization (OIS) is enabled but OIS data is not stored, which means that the saved camera parameters are not valid. Please enable OIS data in settings.</string>
     <string name="warning_text_dvs">Digital Video Stabilization is enabled, the stored camera parameters will not be correct.</string>
+    <string name="permission_text">This app requires permission to use the camera.\n\nIt will be useless otherwise.</string>
+    <string name="grant_permission_button">Grant Permission</string>
+    <string name="decline_permission_button">Keep it useless</string>
 </resources>

@@ -25,7 +25,6 @@ import android.net.Uri;
 import android.provider.Settings;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import android.widget.Toast;
 
 /**
  * Helper class for handling dangerous permissions for Android API level >= 23 which
@@ -39,45 +38,13 @@ class PermissionHelper {
                 Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
     }
 
-    public static boolean hasWriteStoragePermission(Activity activity) {
-        return ContextCompat.checkSelfPermission(activity,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+    public static boolean mustShowRationale(Activity activity) {
+        return ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.CAMERA);
     }
 
-    public static void requestCameraPermission(Activity activity, boolean requestWritePermission) {
-
-        boolean showRationale = ActivityCompat.shouldShowRequestPermissionRationale(activity,
-                Manifest.permission.CAMERA) || (requestWritePermission &&
-                ActivityCompat.shouldShowRequestPermissionRationale(activity,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE));
-        if (showRationale) {
-            Toast.makeText(activity,
-                    "Camera permission is needed to run this application", Toast.LENGTH_LONG).show();
-        } else {
-
-            // No explanation needed, we can request the permission.
-
-            String permissions[] = requestWritePermission ? new String[]{Manifest.permission.CAMERA,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE} : new String[]{Manifest.permission.CAMERA};
-            ActivityCompat.requestPermissions(activity, permissions, RC_PERMISSION_REQUEST);
-        }
-    }
-
-    public static void requestWriteStoragePermission(Activity activity) {
-        boolean showRationale = ActivityCompat.shouldShowRequestPermissionRationale(activity,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        if (showRationale) {
-            Toast.makeText(activity,
-                    "Writing to external storage permission is needed to run this application",
-                    Toast.LENGTH_LONG).show();
-        } else {
-
-            // No explanation needed, we can request the permission.
-
-            String permissions[] = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE};
-
-            ActivityCompat.requestPermissions(activity, permissions, RC_PERMISSION_REQUEST);
-        }
+    public static void requestCameraPermission(Activity activity) {
+        String permissions[] = new String[]{Manifest.permission.CAMERA};
+        ActivityCompat.requestPermissions(activity, permissions, RC_PERMISSION_REQUEST);
     }
 
     /**
