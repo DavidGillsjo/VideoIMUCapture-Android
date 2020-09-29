@@ -23,6 +23,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
@@ -101,15 +102,19 @@ public class CameraCaptureFragment extends Fragment
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         Log.d(TAG, "onCreateView: " + this);
-        View rootView = inflater.inflate(
-                R.layout.capture_fragment,
-                container,
-                false);
+        return inflater.inflate(R.layout.capture_fragment, container, false);
+    }
 
-        FloatingActionButton button = (FloatingActionButton) rootView.findViewById(R.id.toggleRecording_button);
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        Log.d(TAG, "onViewCreated: " + this);
+
+        // Setup buttons
+        FloatingActionButton button = (FloatingActionButton) view.findViewById(R.id.toggleRecording_button);
         button.setOnClickListener(this::clickToggleRecording);
 
-        FloatingActionButton warning_button = (FloatingActionButton) rootView.findViewById(R.id.OIS_warning_button);
+        FloatingActionButton warning_button = (FloatingActionButton) view.findViewById(R.id.OIS_warning_button);
         Animation anim = new AlphaAnimation(0.8f, 1.0f);
         anim.setDuration(500); //Manage the blinking time with this parameter
         anim.setStartOffset(20);
@@ -118,17 +123,9 @@ public class CameraCaptureFragment extends Fragment
         warning_button.startAnimation(anim);
         warning_button.setOnClickListener(this::clickWarning);
 
-        return rootView;
-    }
-
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        Log.d(TAG, "onViewCreated: " + this);
-
         // Configure the GLSurfaceView.  This will start the Renderer thread, with an
         // appropriate EGL context.
-        mGLView = (SampleGLView) getView().findViewById(R.id.cameraPreview_surfaceView);
+        mGLView = (SampleGLView) view.findViewById(R.id.cameraPreview_surfaceView);
         mGLView.setEGLContextClientVersion(2);     // select GLES 2.0
         mRenderer = new CameraSurfaceRenderer(
                 getmCameraHandler(), getsVideoEncoder());
@@ -141,7 +138,7 @@ public class CameraCaptureFragment extends Fragment
             }
         });
 
-        mCaptureResultText = (TextView) getView().findViewById(R.id.captureResult_text);
+        mCaptureResultText = (TextView) view.findViewById(R.id.captureResult_text);
 
     }
 

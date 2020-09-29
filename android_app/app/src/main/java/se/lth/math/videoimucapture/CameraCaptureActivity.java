@@ -16,6 +16,8 @@
 
 package se.lth.math.videoimucapture;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import android.graphics.SurfaceTexture;
@@ -209,9 +211,12 @@ public class CameraCaptureActivity extends AppCompatActivity {
         }
     }
 
+    private void setSettingsEnabled(Boolean enable) {
+        MaterialToolbar bar = findViewById(R.id.topAppBar);
+        bar.getMenu().findItem(R.id.settings).setEnabled(enable);
+    }
+
     private void  createCameraCaptureFragment() {
-        MaterialToolbar bar = (MaterialToolbar) findViewById(R.id.topAppBar);
-        bar.getMenu().findItem(R.id.settings).setEnabled(true);
         CameraCaptureFragment fragment = new CameraCaptureFragment();
         getSupportFragmentManager()
                 .beginTransaction()
@@ -220,8 +225,6 @@ public class CameraCaptureActivity extends AppCompatActivity {
     }
 
     private void  createPermissionFragment() {
-        MaterialToolbar bar = (MaterialToolbar) findViewById(R.id.topAppBar);
-        bar.getMenu().findItem(R.id.settings).setEnabled(false);
         PermissionRationaleFragment fragment = new PermissionRationaleFragment();
         getSupportFragmentManager()
                 .beginTransaction()
@@ -242,6 +245,7 @@ public class CameraCaptureActivity extends AppCompatActivity {
         if (!PermissionHelper.hasCameraPermission(this)) {
             // We don't have permission to use camera
             if (PermissionHelper.mustShowRationale(this)) {
+                setSettingsEnabled(false);
                 createPermissionFragment();
             }
             else {
@@ -252,6 +256,7 @@ public class CameraCaptureActivity extends AppCompatActivity {
             if (mPermissionFragment != null) {
                 getSupportFragmentManager().beginTransaction().remove(mPermissionFragment).commit();
             }
+            setSettingsEnabled(true);
             createCameraCaptureFragment();
         }
 
