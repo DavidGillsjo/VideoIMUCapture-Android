@@ -21,6 +21,9 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.widget.FrameLayout;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Layout that adjusts to maintain a specific aspect ratio.
  */
@@ -28,6 +31,8 @@ public class AspectFrameLayout extends FrameLayout {
     private static final String TAG = CameraCaptureActivity.TAG + "-AFL";
 
     private double mTargetAspect = -1.0;        // initially use default window size
+    private Map<Integer, Integer> widthLookup = new HashMap<>();
+    private Map<Integer, Integer> heightLookup = new HashMap<>();
 
     public AspectFrameLayout(Context context) {
         super(context);
@@ -47,6 +52,8 @@ public class AspectFrameLayout extends FrameLayout {
         Log.d(TAG, "Setting aspect ratio to " + aspectRatio + " (was " + mTargetAspect + ")");
         if (mTargetAspect != aspectRatio) {
             mTargetAspect = aspectRatio;
+            widthLookup.clear();
+            heightLookup.clear();
             requestLayout();
         }
     }
@@ -57,9 +64,15 @@ public class AspectFrameLayout extends FrameLayout {
 //                " width=[" + MeasureSpec.toString(widthMeasureSpec) +
 //                "] height=[" + View.MeasureSpec.toString(heightMeasureSpec) + "]");
 
-        // Target aspect ratio will be < 0 if it hasn't been set yet.  In that case,
-        // we just use whatever we've been handed.
-        if (mTargetAspect > 0) {
+
+        if (widthLookup.containsKey(widthMeasureSpec)
+                && heightLookup.containsKey(heightMeasureSpec)) {
+            // We have calculated this before, just reuse calculations.
+            widthMeasureSpec = widthLookup.get(widthMeasureSpec);
+            heightMeasureSpec = heightLookup.get(heightMeasureSpec);
+        } else if (mTargetAspect > 0) {
+            // Target aspect ratio will be < 0 if it hasn't been set yet.  In that case,
+            // we just use whatever we've been handed.
             int initialWidth = MeasureSpec.getSize(widthMeasureSpec);
             int initialHeight = MeasureSpec.getSize(heightMeasureSpec);
 
@@ -92,8 +105,12 @@ public class AspectFrameLayout extends FrameLayout {
 //                        horizPadding + "x" + vertPadding);
                 initialWidth += horizPadding;
                 initialHeight += vertPadding;
-                widthMeasureSpec = MeasureSpec.makeMeasureSpec(initialWidth, MeasureSpec.EXACTLY);
-                heightMeasureSpec = MeasureSpec.makeMeasureSpec(initialHeight, MeasureSpec.EXACTLY);
+                widthLookup.put(widthMeasureSpec,
+                        MeasureSpec.makeMeasureSpec(initialWidth, MeasureSpec.EXACTLY));
+                heightLookup.put(heightMeasureSpec,
+                        MeasureSpec.makeMeasureSpec(initialHeight, MeasureSpec.EXACTLY));
+                widthMeasureSpec = widthLookup.get(widthMeasureSpec);
+                heightMeasureSpec = heightLookup.get(heightMeasureSpec);
             }
         }
 
