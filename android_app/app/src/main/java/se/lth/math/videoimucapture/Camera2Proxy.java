@@ -1,7 +1,5 @@
 package se.lth.math.videoimucapture;
 
-import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -32,6 +30,7 @@ import android.util.Size;
 import android.view.Surface;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static java.lang.Math.abs;
 
@@ -98,7 +97,6 @@ public class Camera2Proxy {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.M)
     public Camera2Proxy(Activity activity, CameraSettingsManager cameraSettingsManager) {
         mActivity = activity;
         mCameraManager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
@@ -139,7 +137,6 @@ public class Camera2Proxy {
         return mPreviewSize;
     }
 
-    @SuppressLint("MissingPermission")
     public void openCamera() {
         Log.v(TAG, "openCamera");
         startBackgroundThread();
@@ -149,7 +146,7 @@ public class Camera2Proxy {
         }
         try {
             mCameraManager.openCamera(mCameraIdStr, mStateCallback, mBackgroundHandler);
-        } catch (CameraAccessException e) {
+        } catch (CameraAccessException | SecurityException e) {
             e.printStackTrace();
         }
     }
@@ -197,7 +194,7 @@ public class Camera2Proxy {
                 mPreviewSurface = new Surface(mPreviewSurfaceTexture);
             }
             mPreviewRequestBuilder.addTarget(mPreviewSurface);
-            mCameraDevice.createCaptureSession(Arrays.asList(mPreviewSurface),
+            mCameraDevice.createCaptureSession(Collections.singletonList(mPreviewSurface),
                     new CameraCaptureSession.StateCallback() {
 
                         @Override
@@ -275,13 +272,12 @@ public class Camera2Proxy {
             new CameraCaptureSession.CaptureCallback() {
 
                 @Override
-                @SuppressLint("NewApi")
-                public void onCaptureCompleted(CameraCaptureSession session,
-                                               CaptureRequest request,
+                public void onCaptureCompleted(@NonNull CameraCaptureSession session,
+                                               @NonNull CaptureRequest request,
                                                TotalCaptureResult result) {
 
-                    if (result.get(CaptureResult.CONTROL_AF_STATE) != CameraMetadata.CONTROL_AF_STATE_INACTIVE) {
-                        // Auto focus has been triggered, reset trigger.
+                    if (result.get(CaptureResult.CONTROL_AF_TRIGGER) != CameraMetadata.CONTROL_AF_TRIGGER_IDLE) {
+                        // Auto focus has been triggered or canceled, reset trigger.
                         mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                                 CaptureRequest.CONTROL_AF_TRIGGER_IDLE);
                         try {
@@ -313,8 +309,7 @@ public class Camera2Proxy {
                 }
 
                 @Override
-                public void onCaptureProgressed(CameraCaptureSession session, CaptureRequest request,
-                                                CaptureResult partialResult) {
+                public void onCaptureProgressed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureResult partialResult) {
 //                    Log.d(TAG, "mSessionCaptureCallback,  onCaptureProgressed");
                 }
             };
@@ -440,6 +435,7 @@ public class Camera2Proxy {
         if (!mCameraSettingsManager.focusOnTouch()) {
             return;
         }
+        Log.d(TAG, "Setting focus point");
         final int y = (int) ((eventX / (float) viewWidth) * (float) sensorArraySize.height());
         final int x = (int) ((eventY / (float) viewHeight) * (float) sensorArraySize.width());
         final int halfTouchWidth = 400;
