@@ -293,7 +293,7 @@ class CameraSettingFocusMode extends CameraSetting {
     private final FocusMode DEFAULT_FOCUS_MODE = FocusMode.TOUCH_AUTO;
     private final float DEFAULT_FOCUS_DISTANCE = 0;
     private final float FOCUS_RESOLUTION = 0.1f;
-    private Float mMinFocusDistance = null;
+    private Float mMinFocusDistance;
     private final String mModePrefKey = "focus_mode";
     private final String mDistancePrefKey = "focus_distance";
 
@@ -361,20 +361,24 @@ class CameraSettingFocusMode extends CameraSetting {
 
 
         FloatSeekBarPreference distPref = prefScreen.findPreference(mDistancePrefKey);
-        distPref.setMax(mMinFocusDistance);
-        distPref.setMin(0);
-        distPref.setResolution(FOCUS_RESOLUTION);
-        distPref.setValue(DEFAULT_FOCUS_DISTANCE);
-        modePref.setPersistent(true);
-        distPref.setEnabled(getMode()==FocusMode.MANUAL);
+        if (mMinFocusDistance != null && mValidModes.contains(FocusMode.MANUAL)) {
+            distPref.setMax(mMinFocusDistance);
+            distPref.setMin(0);
+            distPref.setResolution(FOCUS_RESOLUTION);
+            distPref.setValue(DEFAULT_FOCUS_DISTANCE);
+            distPref.setPersistent(true);
+            distPref.setEnabled(getMode() == FocusMode.MANUAL);
 
-        modePref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-            @Override
-            public boolean onPreferenceChange(Preference preference, Object newValue) {
-                distPref.setEnabled(FocusMode.valueOf((String) newValue) == FocusMode.MANUAL);
-                return true;
-            }
-        });
+            modePref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    distPref.setEnabled(FocusMode.valueOf((String) newValue) == FocusMode.MANUAL);
+                    return true;
+                }
+            });
+        } else {
+            distPref.setVisible(false);
+        }
 
     }
 
@@ -413,7 +417,7 @@ class CameraSettingExposureMode extends CameraSetting {
     private final String mExposurePrefKey = "exposure";
 
     public CameraSettingExposureMode(CameraCharacteristics cameraCharacteristics) {
-        //Check available options
+        //Check available modes
         int[] availableModes = cameraCharacteristics.get(
                 CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES);
         for (int m : availableModes) {
@@ -428,34 +432,39 @@ class CameraSettingExposureMode extends CameraSetting {
         }
         Collections.sort(mValidModes);
 
-        //Reduce ISO range and check default
-        mISORange = cameraCharacteristics.get(
-                CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE);
-        mISORange = mISORange.intersect(mISORange.getLower(), MAX_ISO);
-        DEFAULT_ISO = mISORange.clamp(DEFAULT_ISO);
-
-        //Reduce Exposure range and check default
-        Range <Long> exposureRangeNs = cameraCharacteristics.get(
-                CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE);
-        exposureRangeNs = exposureRangeNs.intersect(exposureRangeNs.getLower(),
-                                                    exposureMsToNs(MAX_EXPOSURE_MS));
-        mExposureTimeRange = new Range<>(
-                exposureNsToMs(exposureRangeNs.getLower()),
-                exposureNsToMs(exposureRangeNs.getUpper())
-        );
-        DEFAULT_EXPOSURE_MS = mExposureTimeRange.clamp(DEFAULT_EXPOSURE_MS);
-
-        //Set default values
+        //Set default value
         if (mRestoreDefault || !mSharedPreferences.contains(mModePrefKey)) {
             mSharedPreferences.edit().putString(mModePrefKey, DEFAULT_MODE.toString()).apply();
         }
-        if (mRestoreDefault || !mSharedPreferences.contains(mISOPrefKey)) {
-            mSharedPreferences.edit().putInt(mISOPrefKey, DEFAULT_ISO).apply();
-        }
-        if (mRestoreDefault || !mSharedPreferences.contains(mExposurePrefKey)) {
-            mSharedPreferences.edit().putFloat(mExposurePrefKey, DEFAULT_EXPOSURE_MS).apply();
-        }
 
+        // If Mode OFF is supported, check ranges.
+        if (mValidModes.contains(Mode.MANUAL)) {
+
+            //Reduce ISO range and check default
+            mISORange = cameraCharacteristics.get(
+                    CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE);
+            mISORange = mISORange.intersect(mISORange.getLower(), MAX_ISO);
+            DEFAULT_ISO = mISORange.clamp(DEFAULT_ISO);
+
+            //Reduce Exposure range and check default
+            Range<Long> exposureRangeNs = cameraCharacteristics.get(
+                    CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE);
+            exposureRangeNs = exposureRangeNs.intersect(exposureRangeNs.getLower(),
+                    exposureMsToNs(MAX_EXPOSURE_MS));
+            mExposureTimeRange = new Range<>(
+                    exposureNsToMs(exposureRangeNs.getLower()),
+                    exposureNsToMs(exposureRangeNs.getUpper())
+            );
+            DEFAULT_EXPOSURE_MS = mExposureTimeRange.clamp(DEFAULT_EXPOSURE_MS);
+
+            //Set default values
+            if (mRestoreDefault || !mSharedPreferences.contains(mISOPrefKey)) {
+                mSharedPreferences.edit().putInt(mISOPrefKey, DEFAULT_ISO).apply();
+            }
+            if (mRestoreDefault || !mSharedPreferences.contains(mExposurePrefKey)) {
+                mSharedPreferences.edit().putFloat(mExposurePrefKey, DEFAULT_EXPOSURE_MS).apply();
+            }
+        }
     }
 
     private float exposureNsToMs(long expNs) {
@@ -509,30 +518,35 @@ class CameraSettingExposureMode extends CameraSetting {
 
 
         FloatSeekBarPreference expPref = prefScreen.findPreference(mExposurePrefKey);
-        expPref.setMax(mExposureTimeRange.getUpper());
-        expPref.setMin(mExposureTimeRange.getLower());
-        expPref.setResolution(EXPOSURE_RESOLUTION);
-        expPref.setValue(getExposureMs());
-        expPref.setPersistent(true);
-        expPref.setEnabled(getMode()==Mode.MANUAL);
-
         SeekBarPreference isoPref = prefScreen.findPreference(mISOPrefKey);
-        isoPref.setMax(mISORange.getUpper());
-        isoPref.setMin(mISORange.getLower());
-        isoPref.setValue(getISO());
-        isoPref.setPersistent(true);
-        isoPref.setEnabled(getMode()==Mode.MANUAL);
+        if (mValidModes.contains(Mode.MANUAL)) {
+            expPref.setMax(mExposureTimeRange.getUpper());
+            expPref.setMin(mExposureTimeRange.getLower());
+            expPref.setResolution(EXPOSURE_RESOLUTION);
+            expPref.setValue(getExposureMs());
+            expPref.setPersistent(true);
+            expPref.setEnabled(getMode() == Mode.MANUAL);
 
-        modePref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-            @Override
-            public boolean onPreferenceChange(Preference preference, Object newValue) {
-                boolean enable = Mode.valueOf((String) newValue) == Mode.MANUAL;
-                expPref.setEnabled(enable);
-                isoPref.setEnabled(enable);
-                return true;
-            }
-        });
+            isoPref.setMax(mISORange.getUpper());
+            isoPref.setMin(mISORange.getLower());
+            isoPref.setValue(getISO());
+            isoPref.setPersistent(true);
+            isoPref.setEnabled(getMode() == Mode.MANUAL);
 
+            modePref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    boolean enable = Mode.valueOf((String) newValue) == Mode.MANUAL;
+                    expPref.setEnabled(enable);
+                    isoPref.setEnabled(enable);
+                    return true;
+                }
+            });
+        } else {
+            expPref.setVisible(false);
+            isoPref.setVisible(false);
+            modePref.setEnabled(false);
+        }
     }
 
     @Override

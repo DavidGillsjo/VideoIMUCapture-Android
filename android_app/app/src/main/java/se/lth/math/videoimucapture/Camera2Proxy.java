@@ -53,7 +53,6 @@ public class Camera2Proxy {
     private CaptureRequest mPreviewRequest;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
-    private ImageReader mImageReader;
     private Surface mPreviewSurface;
     private SurfaceTexture mPreviewSurfaceTexture = null;
 
@@ -154,6 +153,7 @@ public class Camera2Proxy {
 
     public void releaseCamera() {
         Log.v(TAG, "releaseCamera");
+        stopRecordingCaptureResult();
         if (null != mCaptureSession) {
             mCaptureSession.close();
             mCaptureSession = null;
@@ -162,13 +162,8 @@ public class Camera2Proxy {
             mCameraDevice.close();
             mCameraDevice = null;
         }
-        if (mImageReader != null) {
-            mImageReader.close();
-            mImageReader = null;
-        }
         mPreviewSurfaceTexture = null;
         mCameraIdStr = "";
-        stopRecordingCaptureResult();
         stopBackgroundThread();
     }
 
@@ -353,7 +348,9 @@ public class Camera2Proxy {
         try {
             mCaptureSession.setRepeatingRequest(
                     mPreviewRequest, mSessionCaptureCallback, mBackgroundHandler);
-        } catch (CameraAccessException e) {
+        } catch (CameraAccessException | IllegalStateException e) {
+            // IllegalStateException may happen if shutting down the camera session prior to
+            // full initialization.
             e.printStackTrace();
         }
     }

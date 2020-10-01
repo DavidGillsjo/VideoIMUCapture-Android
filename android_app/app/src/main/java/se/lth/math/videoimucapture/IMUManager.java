@@ -6,6 +6,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Process;
@@ -17,8 +18,8 @@ import java.util.Iterator;
 
 public class IMUManager implements SensorEventListener {
     private static final String TAG = "IMUManager";
-    private static final int ACC_TYPE = Sensor.TYPE_ACCELEROMETER_UNCALIBRATED;
-    private static final int GYRO_TYPE = Sensor.TYPE_GYROSCOPE_UNCALIBRATED;
+    private int ACC_TYPE;
+    private int GYRO_TYPE;
 
     // if the accelerometer data has a timestamp within the
     // [t-x, t+x] of the gyro data at t, then the original acceleration data
@@ -26,7 +27,7 @@ public class IMUManager implements SensorEventListener {
     private final long mInterpolationTimeResolution = 500; // nanoseconds
     private final int mSensorRate = SensorManager.SENSOR_DELAY_GAME;
 
-    private class SensorPacket {
+    private static class SensorPacket {
         long timestamp;
         float[] values;
 
@@ -36,7 +37,7 @@ public class IMUManager implements SensorEventListener {
         }
     }
 
-    private class SyncedSensorPacket {
+    private static class SyncedSensorPacket {
         long timestamp;
         float[] acc_values;
         float[] gyro_values;
@@ -65,8 +66,21 @@ public class IMUManager implements SensorEventListener {
 
     public IMUManager(Activity activity) {
         mSensorManager = (SensorManager) activity.getSystemService(Context.SENSOR_SERVICE);
+        setSensorType();
         mAccel = mSensorManager.getDefaultSensor(ACC_TYPE);
         mGyro = mSensorManager.getDefaultSensor(GYRO_TYPE);
+    }
+
+    private void setSensorType() {
+        if (Build.VERSION.SDK_INT >= 26)
+            ACC_TYPE = Sensor.TYPE_ACCELEROMETER_UNCALIBRATED;
+        else
+            ACC_TYPE = Sensor.TYPE_ACCELEROMETER;
+        GYRO_TYPE = Sensor.TYPE_GYROSCOPE_UNCALIBRATED;
+    }
+
+    public Boolean sensorsExist() {
+        return (mAccel != null) && (mGyro != null);
     }
 
     public void startRecording(RecordingWriter recordingWriter) {
@@ -76,9 +90,7 @@ public class IMUManager implements SensorEventListener {
     }
 
     public void stopRecording() {
-        if (mRecordingInertialData) {
-            mRecordingInertialData = false;
-        }
+        mRecordingInertialData = false;
     }
 
     @Override
@@ -163,21 +175,31 @@ public class IMUManager implements SensorEventListener {
 
         for (int i = 0 ; i < 3 ; i++) {
             imuBuilder.addGyro(packet.gyro_values[i]);
-            imuBuilder.addGyroDrift(packet.gyro_values[i+3]);
             imuBuilder.addAccel(packet.acc_values[i]);
-            imuBuilder.addAccelBias(packet.acc_values[i+3]);
         }
-
+        if (ACC_TYPE == Sensor.TYPE_ACCELEROMETER_UNCALIBRATED) {
+            for (int i = 3 ; i < 6 ; i++) {
+                imuBuilder.addAccelBias(packet.acc_values[i]);
+            }
+        }
+        if (GYRO_TYPE == Sensor.TYPE_GYROSCOPE_UNCALIBRATED) {
+            for (int i = 3 ; i < 6 ; i++) {
+                imuBuilder.addGyroDrift(packet.gyro_values[i]);
+            }
+        }
         mRecordingWriter.queueData(imuBuilder.build());
     }
 
     private void writeMetaData() {
-        RecordingProtos.IMUInfo.Builder builder = RecordingProtos.IMUInfo.newBuilder()
-                .setGyroInfo(mGyro.toString())
-                .setGyroResolution(mGyro.getResolution())
-                .setAccelInfo(mAccel.toString())
-                .setAccelResolution(mAccel.getResolution());
-
+        RecordingProtos.IMUInfo.Builder builder = RecordingProtos.IMUInfo.newBuilder();
+        if (mGyro != null) {
+            builder.setGyroInfo(mGyro.toString())
+                    .setGyroResolution(mGyro.getResolution());
+        }
+        if (mAccel != null) {
+            builder.setAccelInfo(mAccel.toString())
+                    .setAccelResolution(mAccel.getResolution());
+        }
         mRecordingWriter.queueData(builder.build());
     }
 
@@ -201,6 +223,9 @@ public class IMUManager implements SensorEventListener {
      * https://stackoverflow.com/questions/3286815/sensoreventlistener-in-separate-thread
      */
     public void register() {
+        if (!sensorsExist()) {
+            return;
+        }
         mSensorThread = new HandlerThread("Sensor thread",
                 Process.THREAD_PRIORITY_MORE_FAVORABLE);
         mSensorThread.start();
@@ -216,6 +241,9 @@ public class IMUManager implements SensorEventListener {
      * This will unregister all IMU listeners
      */
     public void unregister() {
+        if (!sensorsExist()) {
+            return;
+        }
         mSensorManager.unregisterListener(this, mAccel);
         mSensorManager.unregisterListener(this, mGyro);
         mSensorManager.unregisterListener(this);

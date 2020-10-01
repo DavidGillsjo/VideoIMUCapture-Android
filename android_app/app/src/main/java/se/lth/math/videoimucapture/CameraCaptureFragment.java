@@ -240,6 +240,10 @@ public class CameraCaptureFragment extends Fragment
             builder.append("- ");
             builder.append(getResources().getString(R.string.warning_text_dvs));
         }
+        if (!getmImuManager().sensorsExist()) {
+            builder.append("- ");
+            builder.append(getResources().getString(R.string.warning_text_imu_missing));
+        }
 
         args.putString("message", builder.toString());
 
@@ -335,7 +339,9 @@ public class CameraCaptureFragment extends Fragment
             warning.setVisibility(View.GONE);
         } else {
             // We have camera settings, update warning accordingly.
-            if (cameraSettingsManager.OISEnabled() || cameraSettingsManager.DVSEnabled())
+            if (cameraSettingsManager.OISEnabled()
+                    || cameraSettingsManager.DVSEnabled()
+                    || !getmImuManager().sensorsExist())
                 warning.setVisibility(View.VISIBLE);
             else
                 warning.setVisibility(View.GONE);
