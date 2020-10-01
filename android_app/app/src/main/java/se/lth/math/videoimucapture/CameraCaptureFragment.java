@@ -122,12 +122,6 @@ public class CameraCaptureFragment extends Fragment
         mRecordingButton.setOnClickListener(this::clickToggleRecording);
 
         mWarningButton = view.findViewById(R.id.OIS_warning_button);
-        Animation anim = new AlphaAnimation(0.8f, 1.0f);
-        anim.setDuration(500); //Manage the blinking time with this parameter
-        anim.setStartOffset(20);
-        anim.setRepeatMode(Animation.REVERSE);
-        anim.setRepeatCount(Animation.INFINITE);
-        mWarningButton.startAnimation(anim);
         mWarningButton.setOnClickListener(this::clickWarning);
 
         // Configure the GLSurfaceView.  This will start the Renderer thread, with an
@@ -199,7 +193,6 @@ public class CameraCaptureFragment extends Fragment
         mGLView.queueEvent(new Runnable() {
             @Override
             public void run() {
-                // Tell the renderer that it's about to be paused so it can clean up.
                 mRenderer.notifyStopPreview();
             }
         });
@@ -216,10 +209,24 @@ public class CameraCaptureFragment extends Fragment
 
     //Callback from encoder when it is finished and thread is shutting down.
     public void onEncodingFinished() {
-        getActivity().runOnUiThread(() -> {
-            mRecordingEnabled = false;
-            updateControls();
-        });
+        Log.d(TAG, "Got listener call");
+        mRecordingEnabled = false;
+        getActivity().runOnUiThread(() -> updateControls());
+    }
+
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        // Wait for recording to stop
+        /*TODO: Not a nice solution, making the Encoder lifecycle aware might be a better move */
+        while(mRecordingEnabled) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     /**
@@ -236,8 +243,6 @@ public class CameraCaptureFragment extends Fragment
                 mRecordingButton.setEnabled(false);
             }
             stopRecording();
-
-
         }
     }
 
@@ -247,7 +252,6 @@ public class CameraCaptureFragment extends Fragment
 
         Bundle args = new Bundle();
         args.putInt("title", R.string.warning_dialog_title);
-
 
         StringBuilder builder = new StringBuilder();
         if (cameraSettingsManager.OISEnabled()) {
@@ -272,6 +276,24 @@ public class CameraCaptureFragment extends Fragment
         InfoDialogFragment newFragment = new InfoDialogFragment();
         newFragment.setArguments(args);
         newFragment.show(getActivity().getSupportFragmentManager(), "warning");
+    }
+
+    private void enableWarning(Boolean enable) {
+        if (mWarningButton == null) {
+            return;
+        }
+        if (enable) {
+            Animation anim = new AlphaAnimation(0.8f, 1.0f);
+            anim.setDuration(500); //Manage the blinking time with this parameter
+            anim.setStartOffset(20);
+            anim.setRepeatMode(Animation.REVERSE);
+            anim.setRepeatCount(Animation.INFINITE);
+            mWarningButton.setAnimation(anim);
+            mWarningButton.setVisibility(View.VISIBLE);
+        } else {
+            mWarningButton.clearAnimation();
+            mWarningButton.setVisibility(View.GONE);
+        }
     }
 
     private void startRecording() {
@@ -304,6 +326,7 @@ public class CameraCaptureFragment extends Fragment
     }
 
     private void stopRecording() {
+        Log.d(TAG, "Stop recording");
         Camera2Proxy camera2Proxy = getmCamera2Proxy();
         if (camera2Proxy != null) {
             camera2Proxy.stopRecordingCaptureResult();
@@ -350,24 +373,22 @@ public class CameraCaptureFragment extends Fragment
             mRecordingButton.setEnabled(true);
         }
 
-        if (mWarningButton != null) {
-            CameraSettingsManager cameraSettingsManager = getmCameraSettingsManager();
-            if ((cameraSettingsManager == null) || !cameraSettingsManager.isInitialized()) {
-                // Camera settings not ready yet, may be due to slow start or waiting for camera permission. Post delayed call.
-                getmCameraHandler().sendMessageDelayed(
-                        getmCameraHandler().obtainMessage(CameraCaptureActivity.CameraHandler.MSG_UPDATE_WARNING),
-                        200
-                );
-                mWarningButton.setVisibility(View.GONE);
-            } else {
-                // We have camera settings, update warning accordingly.
-                if (cameraSettingsManager.OISEnabled()
-                        || cameraSettingsManager.DVSEnabled()
-                        || !getmImuManager().sensorsExist())
-                    mWarningButton.setVisibility(View.VISIBLE);
-                else
-                    mWarningButton.setVisibility(View.GONE);
-            }
+        CameraSettingsManager cameraSettingsManager = getmCameraSettingsManager();
+        if ((cameraSettingsManager == null) || !cameraSettingsManager.isInitialized()) {
+            // Camera settings not ready yet, may be due to slow start or waiting for camera permission. Post delayed call.
+            getmCameraHandler().sendMessageDelayed(
+                    getmCameraHandler().obtainMessage(CameraCaptureActivity.CameraHandler.MSG_UPDATE_WARNING),
+                    200
+            );
+            enableWarning(false);
+        } else {
+            // We have camera settings, update warning accordingly.
+            if (cameraSettingsManager.OISEnabled()
+                    || cameraSettingsManager.DVSEnabled()
+                    || !getmImuManager().sensorsExist())
+                enableWarning(true);
+            else
+                enableWarning(false);
         }
     }
 

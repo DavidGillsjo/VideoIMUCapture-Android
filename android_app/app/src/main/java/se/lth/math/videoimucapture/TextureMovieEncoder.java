@@ -263,6 +263,7 @@ public class TextureMovieEncoder implements Runnable {
         }
         // Capture fragment listens for when we are done
         if (mListener != null) {
+            Log.d(TAG, "Encoder thread calling listener");
             mListener.onEncodingFinished();
         }
     }
@@ -308,6 +309,7 @@ public class TextureMovieEncoder implements Runnable {
                     encoder.handleUpdateSharedContext((EGLContext) inputMessage.obj);
                     break;
                 case MSG_QUIT:
+                    Log.d(TAG, "Quit");
                     Looper.myLooper().quit();
                     break;
                 default:
