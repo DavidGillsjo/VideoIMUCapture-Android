@@ -209,24 +209,9 @@ public class CameraCaptureFragment extends Fragment
 
     //Callback from encoder when it is finished and thread is shutting down.
     public void onEncodingFinished() {
-        Log.d(TAG, "Got listener call");
+        Log.d(TAG, "Got Encoder listener call");
         mRecordingEnabled = false;
         getActivity().runOnUiThread(() -> updateControls());
-    }
-
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        // Wait for recording to stop
-        /*TODO: Not a nice solution, making the Encoder lifecycle aware might be a better move */
-        while(mRecordingEnabled) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     /**
