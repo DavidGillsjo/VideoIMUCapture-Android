@@ -86,6 +86,11 @@ public class TextureMovieEncoder implements Runnable {
     public Float mFrameRate = 15.f;
     private float[] STMatrix = new float[16];
 
+    public interface EncoderListener {
+        void onEncodingFinished();
+    }
+    private EncoderListener mListener = null; //Listener for the Capture UI to know when we are done.
+
     /**
      * Encoder configuration.
      * <p>
@@ -119,6 +124,10 @@ public class TextureMovieEncoder implements Runnable {
             return "EncoderConfig: " + mWidth + "x" + mHeight + " @" + mBitRate +
                     " to '" + mOutputFile + "' ctxt=" + mEglContext;
         }
+    }
+
+    public void setEncoderListener(EncoderListener listener) {
+        mListener = listener;
     }
 
     /**
@@ -155,9 +164,6 @@ public class TextureMovieEncoder implements Runnable {
      * <p>
      * Returns immediately; the encoder/muxer may not yet be finished creating the movie.
      * <p>
-     * TODO: have the encoder thread invoke a callback on the UI thread just before it shuts down
-     * so we can provide reasonable status UI (and let the caller know that movie encoding
-     * has completed).
      */
     public void stopRecording() {
         mHandler.sendMessage(mHandler.obtainMessage(MSG_STOP_RECORDING));
@@ -254,6 +260,10 @@ public class TextureMovieEncoder implements Runnable {
         synchronized (mReadyFence) {
             mReady = mRunning = false;
             mHandler = null;
+        }
+        // Capture fragment listens for when we are done
+        if (mListener != null) {
+            mListener.onEncodingFinished();
         }
     }
 

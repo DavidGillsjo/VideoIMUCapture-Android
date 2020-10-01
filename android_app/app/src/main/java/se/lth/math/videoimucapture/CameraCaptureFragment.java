@@ -41,15 +41,18 @@ import se.lth.math.videoimucapture.gles.Texture2dProgram;
 import static android.content.Context.WINDOW_SERVICE;
 
 public class CameraCaptureFragment extends Fragment
-        implements SurfaceTexture.OnFrameAvailableListener {
+        implements SurfaceTexture.OnFrameAvailableListener, TextureMovieEncoder.EncoderListener {
 
     public static final String TAG = "VIMUC-CaptureFragment";
     private static final boolean VERBOSE = false;
     private SampleGLView mGLView;
     private CameraSurfaceRenderer mRenderer;
     private TextView mCaptureResultText;
+    private AspectFrameLayout mAspectFrameLayout;
 
     private boolean mRecordingEnabled;      // controls button state
+    private FloatingActionButton mRecordingButton;
+    private FloatingActionButton mWarningButton;
 
     private int mCameraPreviewWidth, mCameraPreviewHeight;
 
@@ -91,6 +94,7 @@ public class CameraCaptureFragment extends Fragment
         Log.d(TAG, "onCreate: " + this);
 
         mRecordingEnabled = getsVideoEncoder().isRecording();
+        getsVideoEncoder().setEncoderListener(this);
 
         Log.d(TAG, "onCreate complete: " + this);
     }
@@ -110,22 +114,25 @@ public class CameraCaptureFragment extends Fragment
         super.onViewCreated(view, savedInstanceState);
         Log.d(TAG, "onViewCreated: " + this);
 
-        // Setup buttons
-        FloatingActionButton button = (FloatingActionButton) view.findViewById(R.id.toggleRecording_button);
-        button.setOnClickListener(this::clickToggleRecording);
+        // Hook to aspectframe
+        mAspectFrameLayout = view.findViewById(R.id.cameraPreview_afl);
 
-        FloatingActionButton warning_button = (FloatingActionButton) view.findViewById(R.id.OIS_warning_button);
+        // Setup buttons
+        mRecordingButton = view.findViewById(R.id.toggleRecording_button);
+        mRecordingButton.setOnClickListener(this::clickToggleRecording);
+
+        mWarningButton = view.findViewById(R.id.OIS_warning_button);
         Animation anim = new AlphaAnimation(0.8f, 1.0f);
         anim.setDuration(500); //Manage the blinking time with this parameter
         anim.setStartOffset(20);
         anim.setRepeatMode(Animation.REVERSE);
         anim.setRepeatCount(Animation.INFINITE);
-        warning_button.startAnimation(anim);
-        warning_button.setOnClickListener(this::clickWarning);
+        mWarningButton.startAnimation(anim);
+        mWarningButton.setOnClickListener(this::clickWarning);
 
         // Configure the GLSurfaceView.  This will start the Renderer thread, with an
         // appropriate EGL context.
-        mGLView = (SampleGLView) view.findViewById(R.id.cameraPreview_surfaceView);
+        mGLView = view.findViewById(R.id.cameraPreview_surfaceView);
         mGLView.setEGLContextClientVersion(2);     // select GLES 2.0
         mRenderer = new CameraSurfaceRenderer(
                 getmCameraHandler(), getsVideoEncoder());
@@ -138,23 +145,25 @@ public class CameraCaptureFragment extends Fragment
             }
         });
 
-        mCaptureResultText = (TextView) view.findViewById(R.id.captureResult_text);
+        mCaptureResultText = view.findViewById(R.id.captureResult_text);
 
     }
 
 
     // updates mCameraPreviewWidth/Height
     public void setLayoutAspectRatio(Size cameraPreviewSize) {
-        AspectFrameLayout layout = getView().findViewById(R.id.cameraPreview_afl);
+        if (mAspectFrameLayout == null) {
+            return;
+        }
         Display display = ((WindowManager) getActivity().getSystemService(WINDOW_SERVICE)).getDefaultDisplay();
         mCameraPreviewWidth = cameraPreviewSize.getWidth();
         mCameraPreviewHeight = cameraPreviewSize.getHeight();
         if (display.getRotation() == Surface.ROTATION_0) {
-            layout.setAspectRatio((double) mCameraPreviewHeight / mCameraPreviewWidth);
+            mAspectFrameLayout.setAspectRatio((double) mCameraPreviewHeight / mCameraPreviewWidth);
         } else if (display.getRotation() == Surface.ROTATION_180) {
-            layout.setAspectRatio((double) mCameraPreviewHeight / mCameraPreviewWidth);
+            mAspectFrameLayout.setAspectRatio((double) mCameraPreviewHeight / mCameraPreviewWidth);
         } else {
-            layout.setAspectRatio((double) mCameraPreviewWidth / mCameraPreviewHeight);
+            mAspectFrameLayout.setAspectRatio((double) mCameraPreviewWidth / mCameraPreviewHeight);
         }
     }
 
@@ -181,6 +190,10 @@ public class CameraCaptureFragment extends Fragment
     public void onPause() {
         super.onPause();
 
+        if (mRecordingEnabled) {
+            stopRecording();
+        }
+
         ((CameraCaptureActivity) getActivity()).releaseCamera();
         Log.d(TAG, "onPause -- Pause Camera preview");
         mGLView.queueEvent(new Runnable() {
@@ -199,11 +212,14 @@ public class CameraCaptureFragment extends Fragment
         });
         mGLView.onPause();
 
-        if (mRecordingEnabled) {
-            mRecordingEnabled = false;
-            stopRecording();
-        }
+    }
 
+    //Callback from encoder when it is finished and thread is shutting down.
+    public void onEncodingFinished() {
+        getActivity().runOnUiThread(() -> {
+            mRecordingEnabled = false;
+            updateControls();
+        });
     }
 
     /**
@@ -213,10 +229,16 @@ public class CameraCaptureFragment extends Fragment
         mRecordingEnabled = !mRecordingEnabled;
         if (mRecordingEnabled) {
             startRecording();
+            updateControls();
         } else {
+            // disable button until recording finish
+            if (mRecordingButton != null){
+                mRecordingButton.setEnabled(false);
+            }
             stopRecording();
+
+
         }
-        updateControls();
     }
 
     public void clickWarning(View view) {
@@ -309,10 +331,8 @@ public class CameraCaptureFragment extends Fragment
                         String.format(Locale.getDefault(), "Exp: %.2f ms",
                                 exposureTimeNs / 1000000.0);
 
-        getActivity().runOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
+        getActivity().runOnUiThread(() -> {
+            if (mCaptureResultText != null) {
                 mCaptureResultText.setText("|" + sfl + "|" + sexpotime + "|");
             }
         });
@@ -322,29 +342,32 @@ public class CameraCaptureFragment extends Fragment
      * Updates the on-screen controls to reflect the current state of the app.
      */
     public void updateControls() {
-        FloatingActionButton button = (FloatingActionButton) getView().findViewById(R.id.toggleRecording_button);
-        int id = mRecordingEnabled ?
-                R.drawable.ic_stop_record : R.drawable.ic_start_record;
-        Log.d(TAG, "DRAWING: " + id);
-        button.setImageResource(id);
+        if (mRecordingButton != null) {
+            int id = mRecordingEnabled ?
+                    R.drawable.ic_stop_record : R.drawable.ic_start_record;
+            Log.d(TAG, "DRAWING: " + id);
+            mRecordingButton.setImageResource(id);
+            mRecordingButton.setEnabled(true);
+        }
 
-        FloatingActionButton warning = (FloatingActionButton) getView().findViewById(R.id.OIS_warning_button);
-        CameraSettingsManager cameraSettingsManager = getmCameraSettingsManager();
-        if ((cameraSettingsManager == null) || !cameraSettingsManager.isInitialized()) {
-            // Camera settings not ready yet, may be due to slow start or waiting for camera permission. Post delayed call.
-            getmCameraHandler().sendMessageDelayed(
-                    getmCameraHandler().obtainMessage(CameraCaptureActivity.CameraHandler.MSG_UPDATE_WARNING),
-                    200
-            );
-            warning.setVisibility(View.GONE);
-        } else {
-            // We have camera settings, update warning accordingly.
-            if (cameraSettingsManager.OISEnabled()
-                    || cameraSettingsManager.DVSEnabled()
-                    || !getmImuManager().sensorsExist())
-                warning.setVisibility(View.VISIBLE);
-            else
-                warning.setVisibility(View.GONE);
+        if (mWarningButton != null) {
+            CameraSettingsManager cameraSettingsManager = getmCameraSettingsManager();
+            if ((cameraSettingsManager == null) || !cameraSettingsManager.isInitialized()) {
+                // Camera settings not ready yet, may be due to slow start or waiting for camera permission. Post delayed call.
+                getmCameraHandler().sendMessageDelayed(
+                        getmCameraHandler().obtainMessage(CameraCaptureActivity.CameraHandler.MSG_UPDATE_WARNING),
+                        200
+                );
+                mWarningButton.setVisibility(View.GONE);
+            } else {
+                // We have camera settings, update warning accordingly.
+                if (cameraSettingsManager.OISEnabled()
+                        || cameraSettingsManager.DVSEnabled()
+                        || !getmImuManager().sensorsExist())
+                    mWarningButton.setVisibility(View.VISIBLE);
+                else
+                    mWarningButton.setVisibility(View.GONE);
+            }
         }
     }
 
