@@ -17,7 +17,6 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.OisSample;
 import android.hardware.camera2.params.StreamConfigurationMap;
-import android.media.ImageReader;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -150,7 +149,6 @@ public class Camera2Proxy {
         }
     }
 
-
     public void releaseCamera() {
         Log.v(TAG, "releaseCamera");
         stopRecordingCaptureResult();
@@ -209,6 +207,122 @@ public class Camera2Proxy {
         }
     }
 
+    public void startPreview() {
+        Log.v(TAG, "startPreview");
+        if (mCaptureSession == null || mPreviewRequestBuilder == null) {
+            Log.w(TAG, "startPreview: mCaptureSession or mPreviewRequestBuilder is null");
+            return;
+        }
+        try {
+            mCaptureSession.setRepeatingRequest(
+                    mPreviewRequest, mSessionCaptureCallback, mBackgroundHandler);
+        } catch (CameraAccessException | IllegalStateException e) {
+            // IllegalStateException may happen if shutting down the camera session prior to
+            // full initialization.
+            e.printStackTrace();
+        }
+    }
+
+    public void stopPreview() {
+        Log.v(TAG, "stopPreview");
+        if (mCaptureSession == null || mPreviewRequestBuilder == null) {
+            Log.w(TAG, "stopPreview: mCaptureSession or mPreviewRequestBuilder is null");
+            return;
+        }
+        try {
+            mCaptureSession.stopRepeating();
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private CameraCaptureSession.CaptureCallback mSessionCaptureCallback =
+            new CameraCaptureSession.CaptureCallback() {
+
+                @Override
+                public void onCaptureCompleted(@NonNull CameraCaptureSession session,
+                                               @NonNull CaptureRequest request,
+                                               TotalCaptureResult result) {
+
+                    Integer triggerState = result.get(CaptureResult.CONTROL_AF_TRIGGER);
+                    if ((triggerState != null) && (triggerState != CameraMetadata.CONTROL_AF_TRIGGER_IDLE)) {
+                        // Auto focus has been triggered or canceled, reset trigger.
+                        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+                                CaptureRequest.CONTROL_AF_TRIGGER_IDLE);
+                        try {
+                            mCaptureSession.setRepeatingRequest(
+                                    mPreviewRequestBuilder.build(), mSessionCaptureCallback, mBackgroundHandler);
+                        } catch (CameraAccessException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+
+                    Long exposureTimeNs = result.get(CaptureResult.SENSOR_EXPOSURE_TIME);
+
+                    Float fl = result.get(CaptureResult.LENS_FOCAL_LENGTH);
+
+                    Float fd = result.get(CaptureResult.LENS_FOCUS_DISTANCE);
+
+                    Rect rect = result.get(CaptureResult.SCALER_CROP_REGION);
+                    mFocalLengthHelper.setmFocalLength(fl);
+                    mFocalLengthHelper.setmFocusDistance(fd);
+                    mFocalLengthHelper.setmCropRegion(rect);
+                    Float focal_length_pix = mFocalLengthHelper.getFocalLengthPixel();
+
+                    if (mRecordingMetadata) {
+                        writeCaptureData(result, focal_length_pix);
+                    }
+                    ((CameraCaptureActivity) mActivity).getmCameraCaptureFragment()
+                            .updateCaptureResultPanel(focal_length_pix, exposureTimeNs);
+                }
+
+                @Override
+                public void onCaptureProgressed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureResult partialResult) {
+//                    Log.d(TAG, "mSessionCaptureCallback,  onCaptureProgressed");
+                }
+            };
+
+
+    void changeManualFocusPoint(float eventX, float eventY, int viewWidth, int viewHeight) {
+        if (!mCameraSettingsManager.focusOnTouch()) {
+            return;
+        }
+        Log.d(TAG, "Setting focus point");
+        final int y = (int) ((eventX / (float) viewWidth) * (float) sensorArraySize.height());
+        final int x = (int) ((eventY / (float) viewHeight) * (float) sensorArraySize.width());
+        final int halfTouchWidth = 400;
+        final int halfTouchHeight = 400;
+        MeteringRectangle focusAreaTouch = new MeteringRectangle(Math.max(x - halfTouchWidth, 0),
+                Math.max(y - halfTouchHeight, 0),
+                halfTouchWidth * 2,
+                halfTouchHeight * 2,
+                MeteringRectangle.METERING_WEIGHT_MAX - 1);
+        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS,
+                new MeteringRectangle[]{focusAreaTouch});
+        try {
+            mCaptureSession.setRepeatingRequest(
+                    mPreviewRequestBuilder.build(), null, null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+
+        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_MODE,
+                CameraMetadata.CONTROL_MODE_AUTO);
+        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
+                CaptureRequest.CONTROL_AF_MODE_AUTO);
+        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+                CameraMetadata.CONTROL_AF_TRIGGER_START);
+
+        try {
+            mCaptureSession.setRepeatingRequest(
+                    mPreviewRequestBuilder.build(),
+                    mSessionCaptureCallback, mBackgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void writeCameraInfo() {
 
         RecordingProtos.CameraInfo.Builder metaBuilder = RecordingProtos.CameraInfo.newBuilder()
@@ -262,63 +376,37 @@ public class Camera2Proxy {
 
     }
 
-
-    private CameraCaptureSession.CaptureCallback mSessionCaptureCallback =
-            new CameraCaptureSession.CaptureCallback() {
-
-                @Override
-                public void onCaptureCompleted(@NonNull CameraCaptureSession session,
-                                               @NonNull CaptureRequest request,
-                                               TotalCaptureResult result) {
-
-                    if (result.get(CaptureResult.CONTROL_AF_TRIGGER) != CameraMetadata.CONTROL_AF_TRIGGER_IDLE) {
-                        // Auto focus has been triggered or canceled, reset trigger.
-                        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
-                                CaptureRequest.CONTROL_AF_TRIGGER_IDLE);
-                        try {
-                            mCaptureSession.setRepeatingRequest(
-                                    mPreviewRequestBuilder.build(), mSessionCaptureCallback, mBackgroundHandler);
-                        } catch (CameraAccessException e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-
-                    Long exposureTimeNs = result.get(CaptureResult.SENSOR_EXPOSURE_TIME);
-
-                    Float fl = result.get(CaptureResult.LENS_FOCAL_LENGTH);
-
-                    Float fd = result.get(CaptureResult.LENS_FOCUS_DISTANCE);
-
-                    Rect rect = result.get(CaptureResult.SCALER_CROP_REGION);
-                    mFocalLengthHelper.setmFocalLength(fl);
-                    mFocalLengthHelper.setmFocusDistance(fd);
-                    mFocalLengthHelper.setmCropRegion(rect);
-                    Float focal_length_pix = mFocalLengthHelper.getFocalLengthPixel();
-
-                    if (mRecordingMetadata) {
-                        writeCaptureData(result, focal_length_pix);
-                    }
-                    ((CameraCaptureActivity) mActivity).getmCameraCaptureFragment()
-                            .updateCaptureResultPanel(focal_length_pix, exposureTimeNs);
-                }
-
-                @Override
-                public void onCaptureProgressed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureResult partialResult) {
-//                    Log.d(TAG, "mSessionCaptureCallback,  onCaptureProgressed");
-                }
-            };
-
     private void writeCaptureData(CaptureResult result, Float focal_length_pix) {
         RecordingProtos.VideoFrameMetaData.Builder frameBuilder = RecordingProtos.VideoFrameMetaData.newBuilder()
                 .setTimeNs(result.get(CaptureResult.SENSOR_TIMESTAMP))
-                .setExposureTimeNs(result.get(CaptureResult.SENSOR_EXPOSURE_TIME))
-                .setFrameDurationNs(result.get(CaptureResult.SENSOR_FRAME_DURATION))
-                .setFrameReadoutNs(result.get(CaptureResult.SENSOR_ROLLING_SHUTTER_SKEW))
-                .setIso(result.get(CaptureResult.SENSOR_SENSITIVITY))
                 .setFocalLengthMm(result.get(CaptureResult.LENS_FOCAL_LENGTH))
-                .setFocusDistanceDiopters(result.get(CaptureResult.LENS_FOCUS_DISTANCE))
                 .setEstFocalLengthPix(focal_length_pix);
+
+        // The following values are allowed to be null
+        Long sExp = result.get(CaptureResult.SENSOR_EXPOSURE_TIME);
+        if (sExp != null) {
+            frameBuilder.setExposureTimeNs(sExp);
+        }
+
+        Long sDur = result.get(CaptureResult.SENSOR_FRAME_DURATION);
+        if (sDur != null) {
+            frameBuilder.setFrameDurationNs(sDur);
+        }
+
+        Long sRoll = result.get(CaptureResult.SENSOR_ROLLING_SHUTTER_SKEW);
+        if (sRoll != null) {
+            frameBuilder.setFrameReadoutNs(sRoll);
+        }
+
+        Integer sSens = result.get(CaptureResult.SENSOR_SENSITIVITY);
+        if (sSens != null) {
+            frameBuilder.setIso(sSens);
+        }
+
+        Float fDist = result.get(CaptureResult.LENS_FOCUS_DISTANCE);
+        if (fDist != null) {
+            frameBuilder.setFocusDistanceDiopters(fDist);
+        }
 
         if (Build.VERSION.SDK_INT > 28) {
             OisSample[] oisSamples = result.get(CaptureResult.STATISTICS_OIS_SAMPLES);
@@ -336,36 +424,6 @@ public class Camera2Proxy {
 
         mRecordingWriter.queueData(frameBuilder.build());
 
-    }
-
-
-    public void startPreview() {
-        Log.v(TAG, "startPreview");
-        if (mCaptureSession == null || mPreviewRequestBuilder == null) {
-            Log.w(TAG, "startPreview: mCaptureSession or mPreviewRequestBuilder is null");
-            return;
-        }
-        try {
-            mCaptureSession.setRepeatingRequest(
-                    mPreviewRequest, mSessionCaptureCallback, mBackgroundHandler);
-        } catch (CameraAccessException | IllegalStateException e) {
-            // IllegalStateException may happen if shutting down the camera session prior to
-            // full initialization.
-            e.printStackTrace();
-        }
-    }
-
-    public void stopPreview() {
-        Log.v(TAG, "stopPreview");
-        if (mCaptureSession == null || mPreviewRequestBuilder == null) {
-            Log.w(TAG, "stopPreview: mCaptureSession or mPreviewRequestBuilder is null");
-            return;
-        }
-        try {
-            mCaptureSession.stopRepeating();
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
     }
 
     private void logAnalyticsConfig() {
@@ -426,45 +484,6 @@ public class Camera2Proxy {
         ((CameraCaptureActivity) mActivity).getmFirebaseAnalytics().logEvent("camera_config", params);
         sharedPreferences.edit().putInt(CAMERA_CONFIG_VERSION_SENT, versionCode).apply();
         Log.d(TAG, "Setting logAnalyticsConfig version to: " + versionCode);
-    }
-
-    void changeManualFocusPoint(float eventX, float eventY, int viewWidth, int viewHeight) {
-        if (!mCameraSettingsManager.focusOnTouch()) {
-            return;
-        }
-        Log.d(TAG, "Setting focus point");
-        final int y = (int) ((eventX / (float) viewWidth) * (float) sensorArraySize.height());
-        final int x = (int) ((eventY / (float) viewHeight) * (float) sensorArraySize.width());
-        final int halfTouchWidth = 400;
-        final int halfTouchHeight = 400;
-        MeteringRectangle focusAreaTouch = new MeteringRectangle(Math.max(x - halfTouchWidth, 0),
-                Math.max(y - halfTouchHeight, 0),
-                halfTouchWidth * 2,
-                halfTouchHeight * 2,
-                MeteringRectangle.METERING_WEIGHT_MAX - 1);
-        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS,
-                new MeteringRectangle[]{focusAreaTouch});
-        try {
-            mCaptureSession.setRepeatingRequest(
-                    mPreviewRequestBuilder.build(), null, null);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-
-        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_MODE,
-                CameraMetadata.CONTROL_MODE_AUTO);
-        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
-                CaptureRequest.CONTROL_AF_MODE_AUTO);
-        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
-                CameraMetadata.CONTROL_AF_TRIGGER_START);
-
-        try {
-            mCaptureSession.setRepeatingRequest(
-                    mPreviewRequestBuilder.build(),
-                    mSessionCaptureCallback, mBackgroundHandler);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
     }
 
     private void startBackgroundThread() {
