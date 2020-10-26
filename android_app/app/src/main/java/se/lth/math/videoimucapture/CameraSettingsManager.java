@@ -2,15 +2,22 @@ package se.lth.math.videoimucapture;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
+import android.graphics.Camera;
+import android.graphics.Rect;
+import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.params.OutputConfiguration;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.MediaRecorder;
 import android.os.Build;
+import android.util.Log;
 import android.util.Range;
 import android.util.Size;
 
+import androidx.annotation.RequiresApi;
+import androidx.preference.CheckBoxPreference;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceManager;
@@ -22,12 +29,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 
 public class CameraSettingsManager {
-    private enum Setting {OIS, OIS_DATA, DVS, VIDEO_SIZE, FOCUS_MODE, EXPOSURE_MODE};
+    private enum Setting {OIS, OIS_DATA, DVS, VIDEO_SIZE, FOCUS_MODE, EXPOSURE_MODE, ZOOM_RATIO, PHYSICAL_CAMERA};
     private Map<Setting, CameraSetting> mCameraSettings;
     private boolean mInitialized = false;
 
@@ -42,6 +51,12 @@ public class CameraSettingsManager {
     public void updateRequestBuilder(CaptureRequest.Builder builder) {
         for (Map.Entry<Setting, CameraSetting> entry : mCameraSettings.entrySet()) {
             entry.getValue().updateCaptureRequest(builder);
+        }
+    }
+
+    public void updateOutputConfiguration(OutputConfiguration outputConfiguration) {
+        for (Map.Entry<Setting, CameraSetting> entry : mCameraSettings.entrySet()) {
+            entry.getValue().updateOutputConfiguration(outputConfiguration);
         }
     }
 
@@ -92,15 +107,11 @@ public class CameraSettingsManager {
                 )
         );
 
-        mCameraSettings.put(Setting.VIDEO_SIZE,
-                new CameraSettingVideoSize(
-                        "video_size",
-                        cameraCharacteristics
-                )
-        );
-
+        mCameraSettings.put(Setting.VIDEO_SIZE, new CameraSettingVideoSize(cameraCharacteristics));
         mCameraSettings.put(Setting.FOCUS_MODE, new CameraSettingFocusMode(cameraCharacteristics));
         mCameraSettings.put(Setting.EXPOSURE_MODE, new CameraSettingExposureMode(cameraCharacteristics));
+        mCameraSettings.put(Setting.ZOOM_RATIO, new CameraSettingZoomRatio(cameraCharacteristics));
+        mCameraSettings.put(Setting.PHYSICAL_CAMERA, new CameraSettingPhysicalCamera(cameraCharacteristics));
 
         mInitialized = true;
 
@@ -146,6 +157,7 @@ abstract class CameraSetting {
     public static void setRestoreDefault() {mRestoreDefault=true;};
 
     public void updatePreferenceScreen(PreferenceScreen screen) {
+        Log.d("Settingsmanager", mPrefKey);
         Preference pref = screen.findPreference(mPrefKey);
         if (pref != null) {
             updatePreference(pref);
@@ -160,6 +172,7 @@ abstract class CameraSetting {
         preference.setPersistent(true);
     }
     public void updateCaptureRequest(CaptureRequest.Builder builder) {}
+    public void updateOutputConfiguration(OutputConfiguration outputConfiguration) {}
 
 }
 
@@ -223,15 +236,16 @@ class CameraSettingVideoSize extends CameraSetting {
 
     private Size[] mValidSizes;
     private static Size DEFAULT_VIDEO_SIZE = new Size(1280, 960);
+    private final String mSizePrefKey = "video_size";
+    private final String mMaxSensorPrefKey = "use_full_sensor";
+    private final boolean DEFAULT_MAX_SENSOR = true;
+    private Rect mArraySensorSize;
 
 
 
-    public CameraSettingVideoSize(String prefKey, CameraCharacteristics cameraCharacteristics) {
-        mPrefKey = prefKey;
+    public CameraSettingVideoSize(CameraCharacteristics cameraCharacteristics) {
 
-        if (mRestoreDefault) {
-            mSharedPreferences.edit().remove(mPrefKey).apply();
-        }
+        mArraySensorSize = cameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
 
         // Update Sizes
         StreamConfigurationMap map = cameraCharacteristics.get(CameraCharacteristics
@@ -249,41 +263,143 @@ class CameraSettingVideoSize extends CameraSetting {
                 setSize(newSize);
             }
         }
+
+        //Set default
+        if (mRestoreDefault || !mSharedPreferences.contains(mSizePrefKey)) {
+            setSize(DEFAULT_VIDEO_SIZE);
+        }
+        if (mRestoreDefault || !mSharedPreferences.contains(mMaxSensorPrefKey)) {
+            setMaxSensor(DEFAULT_MAX_SENSOR);
+        }
     }
 
     public Size getSize() {
-        return Size.parseSize(mSharedPreferences.getString(mPrefKey, DEFAULT_VIDEO_SIZE.toString()));
+        return Size.parseSize(mSharedPreferences.getString(mSizePrefKey, DEFAULT_VIDEO_SIZE.toString()));
     }
 
     private void setSize(Size size) {
-        mSharedPreferences.edit().putString(mPrefKey, size.toString()).apply();
+        mSharedPreferences.edit().putString(mSizePrefKey, size.toString()).apply();
     }
 
-    protected void updatePreference(Preference preference) {
-        super.updatePreference(preference);
+    private boolean getMaxSensor() {
+        return mSharedPreferences.getBoolean(mMaxSensorPrefKey, DEFAULT_MAX_SENSOR);
+    }
 
-        if (BuildConfig.DEBUG && !(preference instanceof ListPreference)) {
-            throw new AssertionError("Incorrect preference type for video size");
+    private void setMaxSensor(boolean enable) {
+        mSharedPreferences.edit().putBoolean(mMaxSensorPrefKey, enable).apply();
+    }
+
+    private Size[] getValidSizes() {
+        if (!getMaxSensor()) {
+            return mValidSizes;
         }
 
-        ListPreference listPreference = (ListPreference) preference;
-
-        String[] stringSizes = new String[mValidSizes.length];
-        int defaultIndex = -1;
-        Size defaultSize = getSize();
-        for (int i = 0; i < mValidSizes.length; i++) {
-            stringSizes[i] = mValidSizes[i].toString();
-            if (defaultSize.equals(mValidSizes[i])) {
-                defaultIndex = i;
+        List<Size> validSizes = new LinkedList<>();
+        for (Size size : mValidSizes) {
+            if (size.getWidth() == size.getHeight() * mArraySensorSize.width() / mArraySensorSize.height()) {
+                validSizes.add(size);
             }
         }
-        listPreference.setEntryValues(stringSizes);
-        listPreference.setEntries(stringSizes);
-        listPreference.setValueIndex(defaultIndex);
 
-
+        return validSizes.toArray(new Size[0]);
     }
 
+    public void updatePreferenceScreen(PreferenceScreen screen) {
+        CheckBoxPreference maxSensorPref = screen.findPreference(mMaxSensorPrefKey);
+        maxSensorPref.setEnabled(mConfigurable);
+        maxSensorPref.setChecked(getMaxSensor());
+        maxSensorPref.setPersistent(true);
+        maxSensorPref.setOnPreferenceChangeListener((preference, newValue) -> {
+            setMaxSensor((boolean) newValue);
+            updatePreferenceScreen(screen);
+            return false;
+        });
+
+        ListPreference listPreference = screen.findPreference(mSizePrefKey);
+        listPreference.setEnabled(mConfigurable);
+        if (mConfigurable) {
+            Size[] validSizes = getValidSizes();
+
+            String[] stringSizes = new String[validSizes.length];
+            int defaultIndex = -1;
+            Size defaultSize = getSize();
+            for (int i = 0; i < validSizes.length; i++) {
+                stringSizes[i] = validSizes[i].toString();
+                if (defaultSize.equals(validSizes[i])) {
+                    defaultIndex = i;
+                }
+            }
+            listPreference.setEntryValues(stringSizes);
+            listPreference.setEntries(stringSizes);
+            listPreference.setValueIndex(defaultIndex);
+            listPreference.setPersistent(true);
+        }
+    }
+}
+
+// If logical camera, enable choosing a specific lens.
+class CameraSettingPhysicalCamera extends CameraSetting {
+
+    private List<String> mCameraIds;
+    private List<String> mCameraIdsDesc;
+    private static String LOGICAL_ID = "Logical"; //Means the logical device
+
+    public CameraSettingPhysicalCamera(CameraCharacteristics cameraCharacteristics) {
+        mPrefKey = "camera_id";
+        //Check physical stats
+        int[] capabilities = cameraCharacteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
+        boolean multi_camera = false;
+        for (int cap :  capabilities) {
+            if (cap == CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA) {
+                multi_camera = true;
+                break;
+            }
+        }
+        if (multi_camera && Build.VERSION.SDK_INT >=28) {
+            List<String> physicalCameraIds =  new ArrayList<>(cameraCharacteristics.getPhysicalCameraIds());
+            Collections.sort(physicalCameraIds);
+            mCameraIds = new LinkedList<>();
+            mCameraIds.add(LOGICAL_ID);
+            mCameraIds.addAll(physicalCameraIds);
+            mCameraIdsDesc = new LinkedList<>();
+            mCameraIdsDesc.add(LOGICAL_ID);
+            for (String id : physicalCameraIds) {
+                mCameraIdsDesc.add("Physical ID " + id);
+            }
+            mConfigurable = true;
+        } else {
+            mConfigurable = false;
+        }
+
+        //Set default
+        if (mRestoreDefault || !mSharedPreferences.contains(mPrefKey)) {
+            mSharedPreferences.edit().putString(mPrefKey, LOGICAL_ID).apply();
+        }
+    }
+
+    public String getId() {
+        return mSharedPreferences.getString(mPrefKey, LOGICAL_ID);
+    }
+
+    public void updatePreference(Preference pref) {
+        ListPreference idPref = (ListPreference)pref;
+        if (mConfigurable) {
+            idPref.setEntryValues(mCameraIds.toArray(new String[0]));
+            idPref.setEntries(mCameraIdsDesc.toArray(new String[0]));
+            idPref.setValueIndex(mCameraIds.indexOf(getId()));
+            idPref.setVisible(true);
+            super.updatePreference(pref);
+        } else {
+            idPref.setVisible(false);
+        }
+    }
+
+    public void updateOutputConfiguration(OutputConfiguration outputConfiguration) {
+        String id = getId();
+        if (!id.equals(LOGICAL_ID) && Build.VERSION.SDK_INT >= 28) {
+            outputConfiguration.setPhysicalCameraId(id);
+        }
+    }
 }
 
 class CameraSettingFocusMode extends CameraSetting {
@@ -369,12 +485,9 @@ class CameraSettingFocusMode extends CameraSetting {
             distPref.setPersistent(true);
             distPref.setEnabled(getMode() == FocusMode.MANUAL);
 
-            modePref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-                @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
-                    distPref.setEnabled(FocusMode.valueOf((String) newValue) == FocusMode.MANUAL);
-                    return true;
-                }
+            modePref.setOnPreferenceChangeListener((preference, newValue) -> {
+                distPref.setEnabled(FocusMode.valueOf((String) newValue) == FocusMode.MANUAL);
+                return true;
             });
         } else {
             distPref.setVisible(false);
@@ -533,14 +646,11 @@ class CameraSettingExposureMode extends CameraSetting {
             isoPref.setPersistent(true);
             isoPref.setEnabled(getMode() == Mode.MANUAL);
 
-            modePref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-                @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
-                    boolean enable = Mode.valueOf((String) newValue) == Mode.MANUAL;
-                    expPref.setEnabled(enable);
-                    isoPref.setEnabled(enable);
-                    return true;
-                }
+            modePref.setOnPreferenceChangeListener((preference, newValue) -> {
+                boolean enable = Mode.valueOf((String) newValue) == Mode.MANUAL;
+                expPref.setEnabled(enable);
+                isoPref.setEnabled(enable);
+                return true;
             });
         } else {
             expPref.setVisible(false);
@@ -559,6 +669,54 @@ class CameraSettingExposureMode extends CameraSetting {
                 break;
             case AUTO:
                 builder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_ON);
+        }
+    }
+}
+
+class CameraSettingZoomRatio extends CameraSetting {
+    private final float DEFAULT_ZOOM_RATIO = 1.0f;
+    private final float ZOOM_RESOLUTION = 0.1f;
+    private Range<Float> mZoomRange;
+
+    public CameraSettingZoomRatio(CameraCharacteristics cameraCharacteristics) {
+        mPrefKey = "zoom_ratio";
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            mZoomRange = cameraCharacteristics.get(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE);
+            mConfigurable = true;
+        } else {
+            mConfigurable = false;
+        }
+
+        //Set default if not present
+        if (!mSharedPreferences.contains(mPrefKey) || mRestoreDefault) {
+            mSharedPreferences.edit().putFloat(mPrefKey, DEFAULT_ZOOM_RATIO).apply();
+        }
+    }
+
+    private float getRatio() {
+        return mSharedPreferences.getFloat(mPrefKey, DEFAULT_ZOOM_RATIO);
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    @Override
+    public void updateCaptureRequest(CaptureRequest.Builder builder) {
+        if (mConfigurable) {
+            builder.set(CaptureRequest.CONTROL_ZOOM_RATIO, getRatio());
+        }
+    }
+
+    @Override
+    protected void updatePreference(Preference preference) {
+        FloatSeekBarPreference seekbarPref = (FloatSeekBarPreference)preference;
+        if(mConfigurable) {
+            seekbarPref.setVisible(true);
+            seekbarPref.setMax(mZoomRange.getUpper());
+            seekbarPref.setMin(mZoomRange.getLower());
+            seekbarPref.setResolution(ZOOM_RESOLUTION);
+            seekbarPref.setValue(getRatio());
+            super.updatePreference(preference);
+        } else {
+            seekbarPref.setVisible(false);
         }
     }
 }

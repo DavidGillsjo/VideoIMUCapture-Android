@@ -7,10 +7,29 @@
         app:title="General">
 
         <ListPreference
+            app:key="camera_id"
+            app:title="Camera Lens"
+            app:persistent="false"
+            app:useSimpleSummaryProvider="true"/>
+
+        <CheckBoxPreference
+            app:key="use_full_sensor"
+            app:title="Maximize Sensor Area"
+            app:summary="Only show resolutions that use full sensor array area."
+            app:persistent="false"/>
+
+        <ListPreference
             app:key="video_size"
             app:title="Video Size"
             app:persistent="false"
             app:useSimpleSummaryProvider="true"/>
+
+        <se.lth.math.videoimucapture.FloatSeekBarPreference
+            app:key="zoom_ratio"
+            app:title="Zoom ratio"
+            app:showSeekBarValue="true"
+            app:persistent="false"
+            app:summary="Set to less than 1 to use wide lens."/>
     </PreferenceCategory>
 
     <PreferenceCategory

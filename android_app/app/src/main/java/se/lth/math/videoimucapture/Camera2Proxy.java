@@ -16,6 +16,8 @@ import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.OisSample;
+import android.hardware.camera2.params.OutputConfiguration;
+import android.hardware.camera2.params.SessionConfiguration;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
 import android.os.Bundle;
@@ -187,7 +189,7 @@ public class Camera2Proxy {
                 mPreviewSurface = new Surface(mPreviewSurfaceTexture);
             }
             mPreviewRequestBuilder.addTarget(mPreviewSurface);
-            mCameraDevice.createCaptureSession(Collections.singletonList(mPreviewSurface),
+            CameraCaptureSession.StateCallback cb =
                     new CameraCaptureSession.StateCallback() {
 
                         @Override
@@ -201,7 +203,22 @@ public class Camera2Proxy {
                         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
                             Log.e(TAG, "ConfigureFailed. session: mCaptureSession");
                         }
-                    }, mBackgroundHandler);
+                    };
+            if (Build.VERSION.SDK_INT >= 28) {
+                OutputConfiguration outputConfiguration = new OutputConfiguration(mPreviewSurface);
+                mCameraSettingsManager.updateOutputConfiguration(outputConfiguration);
+                mCameraDevice.createCaptureSession(new SessionConfiguration(
+                        SessionConfiguration.SESSION_REGULAR,
+                        Collections.singletonList(outputConfiguration),
+                        r -> mBackgroundHandler.post(r),
+                        cb));
+            } else {
+                mCameraDevice.createCaptureSession(
+                        Collections.singletonList(mPreviewSurface),
+                        cb,
+                        mBackgroundHandler);
+            }
+
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
