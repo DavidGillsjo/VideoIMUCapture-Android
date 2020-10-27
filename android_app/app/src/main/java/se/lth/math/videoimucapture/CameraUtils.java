@@ -35,26 +35,6 @@ public class CameraUtils {
     private static final String TAG = CameraCaptureActivity.TAG;
     private static final float BPP = 0.25f;
 
-
-    /**
-     * In this sample, we choose a video size with 3x4 aspect ratio. Also, we don't use sizes
-     * larger than 1080p, since MediaRecorder cannot handle such a high-resolution video.
-     *
-     * @param choices The list of available sizes
-     * @return The video size
-     */
-    public static Size chooseVideoSize(
-            Size[] choices, int wscale, int hscale, int maxWidth) {
-        for (Size size : choices) {
-            if (size.getWidth() == size.getHeight() * wscale / hscale &&
-                    size.getWidth() <= maxWidth) {
-                return size;
-            }
-        }
-        Log.e(TAG, "Couldn't find any suitable video size");
-        return choices[choices.length - 1];
-    }
-
     /**
      * Compares two {@code Size}s based on their areas.
      */

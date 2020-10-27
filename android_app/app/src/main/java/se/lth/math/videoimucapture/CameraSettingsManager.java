@@ -33,6 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 public class CameraSettingsManager {
@@ -234,7 +235,7 @@ class CameraSettingBoolean extends CameraSetting {
 
 class CameraSettingVideoSize extends CameraSetting {
 
-    private Size[] mValidSizes;
+    private List<Size> mValidSizes;
     private static Size DEFAULT_VIDEO_SIZE = new Size(1280, 960);
     private final String mSizePrefKey = "video_size";
     private final String mMaxSensorPrefKey = "use_full_sensor";
@@ -253,13 +254,13 @@ class CameraSettingVideoSize extends CameraSetting {
         mConfigurable = (map != null);
 
         if (mConfigurable) {
-            mValidSizes = map.getOutputSizes(MediaRecorder.class);
+            mValidSizes = Arrays.asList(map.getOutputSizes(MediaRecorder.class));
 
             // Check if valid, find closest size if not.
             Size currentSize = getSize();
-            if (!Arrays.asList(mValidSizes).contains(currentSize)) {
-                Size newSize = CameraUtils.chooseVideoSize(mValidSizes,
-                        currentSize.getWidth(), currentSize.getHeight(), currentSize.getWidth());
+            if (!mValidSizes.contains(currentSize)) {
+                Size newSize = CameraUtils.chooseOptimalSize(mValidSizes.toArray(new Size[0]),
+                        currentSize.getWidth(), currentSize.getHeight(), currentSize);
                 setSize(newSize);
             }
         }
@@ -269,7 +270,7 @@ class CameraSettingVideoSize extends CameraSetting {
             setSize(DEFAULT_VIDEO_SIZE);
         }
         if (mRestoreDefault || !mSharedPreferences.contains(mMaxSensorPrefKey)) {
-            setMaxSensor(DEFAULT_MAX_SENSOR);
+            mSharedPreferences.edit().putBoolean(mMaxSensorPrefKey, DEFAULT_MAX_SENSOR).apply();
         }
     }
 
@@ -285,55 +286,45 @@ class CameraSettingVideoSize extends CameraSetting {
         return mSharedPreferences.getBoolean(mMaxSensorPrefKey, DEFAULT_MAX_SENSOR);
     }
 
-    private void setMaxSensor(boolean enable) {
-        mSharedPreferences.edit().putBoolean(mMaxSensorPrefKey, enable).apply();
-    }
-
-    private Size[] getValidSizes() {
-        if (!getMaxSensor()) {
-            return mValidSizes;
-        }
-
-        List<Size> validSizes = new LinkedList<>();
-        for (Size size : mValidSizes) {
-            if (size.getWidth() == size.getHeight() * mArraySensorSize.width() / mArraySensorSize.height()) {
-                validSizes.add(size);
-            }
-        }
-
-        return validSizes.toArray(new Size[0]);
+    private List<Size> getSensorSizes() {
+        return mValidSizes.stream()
+                .filter(s -> s.getWidth() == s.getHeight() * mArraySensorSize.width() / mArraySensorSize.height())
+                .collect(Collectors.toList());
     }
 
     public void updatePreferenceScreen(PreferenceScreen screen) {
+        ListPreference listPreference = screen.findPreference(mSizePrefKey);
+        listPreference.setEnabled(mConfigurable);
+        if (mConfigurable) {
+            updatePreferenceList(listPreference, getMaxSensor());
+            listPreference.setPersistent(true);
+        }
+
         CheckBoxPreference maxSensorPref = screen.findPreference(mMaxSensorPrefKey);
         maxSensorPref.setEnabled(mConfigurable);
         maxSensorPref.setChecked(getMaxSensor());
         maxSensorPref.setPersistent(true);
         maxSensorPref.setOnPreferenceChangeListener((preference, newValue) -> {
-            setMaxSensor((boolean) newValue);
-            updatePreferenceScreen(screen);
-            return false;
+            updatePreferenceList(listPreference, (boolean) newValue);
+            return true;
         });
+    }
 
-        ListPreference listPreference = screen.findPreference(mSizePrefKey);
-        listPreference.setEnabled(mConfigurable);
-        if (mConfigurable) {
-            Size[] validSizes = getValidSizes();
+    private void updatePreferenceList(ListPreference listPreference, boolean useSensorAspectRatio) {
+        List<Size> validSizes = useSensorAspectRatio ? getSensorSizes() : mValidSizes;
 
-            String[] stringSizes = new String[validSizes.length];
-            int defaultIndex = -1;
-            Size defaultSize = getSize();
-            for (int i = 0; i < validSizes.length; i++) {
-                stringSizes[i] = validSizes[i].toString();
-                if (defaultSize.equals(validSizes[i])) {
-                    defaultIndex = i;
-                }
-            }
-            listPreference.setEntryValues(stringSizes);
-            listPreference.setEntries(stringSizes);
-            listPreference.setValueIndex(defaultIndex);
-            listPreference.setPersistent(true);
+        if (validSizes.isEmpty()) {
+            listPreference.setEnabled(false);
+            return;
         }
+
+        String[] stringSizes = validSizes.stream().map(Object::toString).toArray(String[]::new);
+        int defaultIndex = validSizes.indexOf(getSize());
+
+        listPreference.setEntryValues(stringSizes);
+        listPreference.setEntries(stringSizes);
+        listPreference.setValueIndex(defaultIndex);
+        listPreference.setEnabled(true);
     }
 }
 
