@@ -1,6 +1,8 @@
 # VideoIMUCapture-Android
 Android application for capturing video and IMU data useful for 3D reconstruction using SLAM and Structure from Motion techniques.
 
+![images/Capture.png](Screenshot of Capture) ![images/Settings.png](Screenshot of Settings)
+
 # Description
 This Android application is a data collection tool for researchers working with Simultaneous Localization and Mapping (SLAM) and Structure from Motion (SfM).
 
