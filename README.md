@@ -2,7 +2,7 @@
 Android application for capturing video and IMU data useful for 3D reconstruction using SLAM and Structure from Motion techniques.
 
 
-<img src="images/Capture.png" width="50%" ><img src="images/Settings.png" width="50%" > 
+<img src="images/Capture.png" width="45%" border="10" \><img src="images/Settings.png" width="45%" border="10" \> 
 
 # Description
 This Android application is a data collection tool for researchers working with Simultaneous Localization and Mapping (SLAM) and Structure from Motion (SfM).
