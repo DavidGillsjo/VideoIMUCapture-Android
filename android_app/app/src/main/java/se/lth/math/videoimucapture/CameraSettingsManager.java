@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -320,6 +319,16 @@ class CameraSettingVideoSize extends CameraSetting {
 
         String[] stringSizes = validSizes.stream().map(Object::toString).toArray(String[]::new);
         int defaultIndex = validSizes.indexOf(getSize());
+
+        // The previous choice was from the full list, this size is not present in the sensor aspect ratio list.
+        if (defaultIndex == -1) {
+            Size closestSize = CameraUtils.chooseOptimalSize(
+                    validSizes.toArray(new Size[0]),
+                    getSize().getWidth(),
+                    getSize().getHeight(),
+                    new Size(mArraySensorSize.width(), mArraySensorSize.height()));
+            defaultIndex = validSizes.indexOf(closestSize);
+        }
 
         listPreference.setEntryValues(stringSizes);
         listPreference.setEntries(stringSizes);
