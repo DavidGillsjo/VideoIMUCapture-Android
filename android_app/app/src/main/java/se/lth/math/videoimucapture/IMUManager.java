@@ -21,11 +21,14 @@ public class IMUManager implements SensorEventListener {
     private int ACC_TYPE;
     private int GYRO_TYPE;
 
+
     // if the accelerometer data has a timestamp within the
     // [t-x, t+x] of the gyro data at t, then the original acceleration data
     // is used instead of linear interpolation
     private final long mInterpolationTimeResolution = 500; // nanoseconds
-    private final int mSensorRate = SensorManager.SENSOR_DELAY_GAME;
+    private final int mSensorRate = 10000; //Us, 100Hz
+    private long mEstimatedSensorRate = 0; // ns
+    private long mPrevTimestamp = 0; // ns
 
     private static class SensorPacket {
         long timestamp;
@@ -203,11 +206,22 @@ public class IMUManager implements SensorEventListener {
         mRecordingWriter.queueData(builder.build());
     }
 
+    private void updateSensorRate(SensorEvent event) {
+        long diff = event.timestamp - mPrevTimestamp;
+        mEstimatedSensorRate += (diff - mEstimatedSensorRate) >> 3;
+        mPrevTimestamp = event.timestamp;
+    }
+
+    public float getSensorFrequency() {
+        return 1e9f/((float) mEstimatedSensorRate);
+    }
+
     @Override
     public final void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == ACC_TYPE) {
             SensorPacket sp = new SensorPacket(event.timestamp, event.values);
             mAccelData.add(sp);
+            updateSensorRate(event);
         } else if (event.sensor.getType() == GYRO_TYPE) {
             SensorPacket sp = new SensorPacket(event.timestamp, event.values);
             mGyroData.add(sp);

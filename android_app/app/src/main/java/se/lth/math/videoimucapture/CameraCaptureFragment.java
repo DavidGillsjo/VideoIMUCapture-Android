@@ -338,10 +338,12 @@ public class CameraCaptureFragment extends Fragment
                         "null ms" :
                         String.format(Locale.getDefault(), "Exp: %.2f ms",
                                 exposureTimeNs / 1000000.0);
+        final String imuHz = String.format(Locale.getDefault(),  "IMU: %.0fHz",
+                getmImuManager().getSensorFrequency());
 
         getActivity().runOnUiThread(() -> {
             if (mCaptureResultText != null) {
-                mCaptureResultText.setText("|" + sfl + "|" + sexpotime + "|");
+                mCaptureResultText.setText("|" + sfl + "|" + sexpotime + "|" + imuHz + "|");
             }
         });
     }
