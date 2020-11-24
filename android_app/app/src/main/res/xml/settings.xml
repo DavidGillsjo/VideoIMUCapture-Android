@@ -30,6 +30,12 @@
             app:showSeekBarValue="true"
             app:persistent="false"
             app:summary="Set to less than 1 to use wide lens."/>
+
+        <SwitchPreferenceCompat
+            app:key="distortion_correction"
+            app:title="Enable Distortion Correction"
+            app:persistent="false"
+            app:summary="Corrects Radial and Tangential Distortion" />
     </PreferenceCategory>
 
     <PreferenceCategory

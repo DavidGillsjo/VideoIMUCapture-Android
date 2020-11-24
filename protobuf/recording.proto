@@ -9,11 +9,15 @@ option java_outer_classname = "RecordingProtos";
 
 message CameraInfo {
   //fx, fy, cx, cy, s
+  // See https://developer.android.com/reference/android/hardware/camera2/CameraCharacteristics#LENS_INTRINSIC_CALIBRATION
+  // for details on how to use the intrinsics, pose_translation and pose_rotation.
   repeated float intrinsic_params = 1;
   //Radial: k1,k2,k3, Tangential: k4,k5
   repeated float distortion_params = 2;
   bool optical_image_stabilization = 3;
   bool video_stabilization = 4;
+  bool distortion_correction = 10;
+  int32 sensor_orientation = 14;
 
   enum FocusCalibration {
     UNCALIBRATED = 0;
@@ -36,6 +40,14 @@ message CameraInfo {
   LensPoseReference lens_pose_reference = 7;
   repeated float lens_pose_rotation = 8;
   repeated float lens_pose_translation = 9;
+
+  message Size {
+    int32 width = 1;
+    int32 height = 2;
+  }
+  Size resolution = 11;
+  Size pre_correction_active_array_size = 12; //SENSOR_INFO_PRE_CORRECTION_ACTIVE_ARRAY_SIZE
+  repeated float original_intrinsic_params = 13;
 
 }
 
@@ -61,6 +73,7 @@ message VideoFrameMetaData {
     float y_shift = 3;
   }
   repeated OISSample OIS_samples =10;
+  bool focus_locked = 11;
 }
 
 message IMUInfo {
@@ -68,6 +81,8 @@ message IMUInfo {
   float gyro_resolution =2;
   string accel_info = 3;
   float accel_resolution =4;
+  float sample_frequency = 5; //Hz
+  repeated float placement = 6;
 }
 
 message IMUData {

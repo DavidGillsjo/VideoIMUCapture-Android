@@ -9,6 +9,8 @@ import android.util.Log;
 import android.util.Size;
 import android.util.SizeF;
 
+import static java.lang.Math.abs;
+
 public class FocalLengthHelper {
 
     private static final String TAG = "FocalLengthHelper";
@@ -23,6 +25,7 @@ public class FocalLengthHelper {
     private Rect mActiveSize; // This rectangle is defined relative to the full pixel array; (0,0) is the top-left of the full pixel array,
     private Rect mCropRegion; // Its The coordinate system is defined relative to the active array rectangle given in this field, with (0, 0) being the top-left of this rectangle.
     private Size mImageSize;
+    private int mSensorOrientation;
 
     public FocalLengthHelper() {
 
@@ -109,6 +112,64 @@ public class FocalLengthHelper {
                 result.get(CameraCharacteristics.SENSOR_INFO_PRE_CORRECTION_ACTIVE_ARRAY_SIZE);
         if (mPreCorrectionSize != null)
             Log.d(TAG, "Precorrection rect " + mPreCorrectionSize.toString());
+        mSensorOrientation = result.get(CameraCharacteristics.SENSOR_ORIENTATION);
+    }
+
+    public float getXScale() {
+        return (float)mImageSize.getWidth()/mPreCorrectionSize.width();
+    }
+    public float getYScale() {
+        return (float)mImageSize.getHeight()/mPreCorrectionSize.height();
+    }
+
+    // Scale intrinsic parameters to image coordinates instead of sensor array coordinates.
+    // Apply rotation in sensor coordinate system to get to device coordinate system,
+    // since we store the image in device coordinate system orientation.
+    public float[] getScaledIntrinsic() {
+        float x_scale = getXScale();
+        float y_scale = getYScale();
+        float[] scaledIntrinsic;
+        float skew;
+        switch (mSensorOrientation) {
+            case 0:
+                scaledIntrinsic =  new float[]{
+                        x_scale*mIntrinsic[0],
+                        y_scale*mIntrinsic[1],
+                        x_scale*mIntrinsic[2],
+                        y_scale*mIntrinsic[3],
+                        mIntrinsic[4]};
+                break;
+            case 90:
+                skew = abs(mIntrinsic[4]) > 1e-5 ? 1/mIntrinsic[4] : 0;
+                scaledIntrinsic =  new float[]{
+                        x_scale*mIntrinsic[1],
+                        y_scale*mIntrinsic[0],
+                        (float)mImageSize.getHeight() - x_scale*mIntrinsic[3] - 1,
+                        y_scale*mIntrinsic[2],
+                        skew};
+                break;
+            case 180:
+                scaledIntrinsic =  new float[]{
+                        x_scale*mIntrinsic[0],
+                        y_scale*mIntrinsic[1],
+                        (float)mImageSize.getWidth() - x_scale*mIntrinsic[2] - 1,
+                        (float)mImageSize.getHeight() - y_scale*mIntrinsic[3] - 1,
+                        mIntrinsic[4]};
+                break;
+            case 270:
+                skew = abs(mIntrinsic[4]) > 1e-5 ? 1/mIntrinsic[4] : 0;
+                scaledIntrinsic =  new float[]{
+                        x_scale*mIntrinsic[1],
+                        y_scale*mIntrinsic[0],
+                        y_scale*mIntrinsic[3],
+                        (float)mImageSize.getWidth() - x_scale*mIntrinsic[2] - 1,
+                        skew};
+                break;
+            default:
+                scaledIntrinsic = new float[] {0,0,0,0,0};
+
+        }
+        return scaledIntrinsic;
     }
 
 }

@@ -29,6 +29,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
@@ -174,7 +175,7 @@ public class CameraCaptureFragment extends Fragment
         mGLView.queueEvent(new Runnable() {
             @Override
             public void run() {
-                mRenderer.setCameraPreviewSize(mCameraPreviewWidth, mCameraPreviewHeight);
+                mRenderer.setCameraPreviewSize(mCameraPreviewWidth, mCameraPreviewHeight, getmCamera2Proxy().getSwappedDimensions());
             }
         });
         Log.d(TAG, "onResume complete: " + this);
@@ -250,6 +251,10 @@ public class CameraCaptureFragment extends Fragment
         if (cameraSettingsManager.DVSEnabled()) {
             builder.append("- ");
             builder.append(getResources().getString(R.string.warning_text_dvs));
+        }
+        if (cameraSettingsManager.DistortionCorrectionEnabled()) {
+            builder.append("- ");
+            builder.append(getResources().getString(R.string.warning_text_distortion));
         }
         if (!getmImuManager().sensorsExist()) {
             builder.append("- ");
@@ -370,12 +375,10 @@ public class CameraCaptureFragment extends Fragment
             enableWarning(false);
         } else {
             // We have camera settings, update warning accordingly.
-            if (cameraSettingsManager.OISEnabled()
+            enableWarning(cameraSettingsManager.OISEnabled()
                     || cameraSettingsManager.DVSEnabled()
-                    || !getmImuManager().sensorsExist())
-                enableWarning(true);
-            else
-                enableWarning(false);
+                    || cameraSettingsManager.DistortionCorrectionEnabled()
+                    || !getmImuManager().sensorsExist());
         }
     }
 
@@ -464,6 +467,7 @@ class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
     private boolean mIncomingSizeUpdated;
     private int mIncomingWidth;
     private int mIncomingHeight;
+    private boolean mSwappedVideoDimensions;
 
 
     /**
@@ -535,10 +539,11 @@ class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
      * so we assume it could go either way.  (Fortunately they both run on the same thread,
      * so we at least know that they won't execute concurrently.)
      */
-    public void setCameraPreviewSize(int width, int height) {
+    public void setCameraPreviewSize(int width, int height, boolean swappedDimensions) {
         Log.d(TAG, "setCameraPreviewSize");
         mIncomingWidth = width;
         mIncomingHeight = height;
+        mSwappedVideoDimensions = swappedDimensions;
         mIncomingSizeUpdated = true;
     }
 
@@ -633,12 +638,11 @@ class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
             switch (mRecordingStatus) {
                 case RECORDING_OFF:
                     Log.d(TAG, "START recording");
-                    // TODO(jhuai): why does the height and width have to be swapped here?
                     mVideoEncoder.startRecording(
                             new TextureMovieEncoder.EncoderConfig(
                                     mOutputFile,
-                                    mIncomingHeight,
-                                    mIncomingWidth,
+                                    mSwappedVideoDimensions ? mIncomingHeight : mIncomingWidth,
+                                    mSwappedVideoDimensions ? mIncomingWidth : mIncomingHeight,
                                     CameraUtils.calcBitRate(mIncomingWidth,
                                             mIncomingHeight,
                                             VideoEncoderCore.FRAME_RATE),

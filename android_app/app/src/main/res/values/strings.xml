@@ -23,4 +23,5 @@
     <string name="grant_permission_button">Grant Permission</string>
     <string name="decline_permission_button">Keep it useless</string>
     <string name="warning_text_imu_missing">Cannot find IMU sensor</string>
+    <string name="warning_text_distortion">Distrotion Correction enabled, distortion parameters are invalid.</string>
 </resources>

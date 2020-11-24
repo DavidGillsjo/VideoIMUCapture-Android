@@ -1,0 +1,3 @@
+[submodule "libs/dockers"]
+	path = libs/dockers
+	url = git@github.com:DavidGillsjo/dockers.git

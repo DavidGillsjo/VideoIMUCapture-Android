@@ -3,8 +3,9 @@ package se.lth.math.videoimucapture;
 import android.app.Activity;
 import android.content.Context;
 import android.hardware.Sensor;
+import android.hardware.SensorAdditionalInfo;
 import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
+import android.hardware.SensorEventCallback;
 import android.hardware.SensorManager;
 import android.os.Build;
 import android.os.Handler;
@@ -16,7 +17,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
 
-public class IMUManager implements SensorEventListener {
+public class IMUManager extends SensorEventCallback {
     private static final String TAG = "IMUManager";
     private int ACC_TYPE;
     private int GYRO_TYPE;
@@ -29,6 +30,7 @@ public class IMUManager implements SensorEventListener {
     private final int mSensorRate = 10000; //Us, 100Hz
     private long mEstimatedSensorRate = 0; // ns
     private long mPrevTimestamp = 0; // ns
+    private float[] mSensorPlacement = null;
 
     private static class SensorPacket {
         long timestamp;
@@ -68,10 +70,12 @@ public class IMUManager implements SensorEventListener {
     private Deque<SensorPacket> mAccelData = new ArrayDeque<>();
 
     public IMUManager(Activity activity) {
+        super();
         mSensorManager = (SensorManager) activity.getSystemService(Context.SENSOR_SERVICE);
         setSensorType();
         mAccel = mSensorManager.getDefaultSensor(ACC_TYPE);
         mGyro = mSensorManager.getDefaultSensor(GYRO_TYPE);
+
     }
 
     private void setSensorType() {
@@ -203,6 +207,15 @@ public class IMUManager implements SensorEventListener {
             builder.setAccelInfo(mAccel.toString())
                     .setAccelResolution(mAccel.getResolution());
         }
+        builder.setSampleFrequency(getSensorFrequency());
+
+        //Store translation for sensor placement in device coordinate system.
+        if (mSensorPlacement != null) {
+           builder.addPlacement(mSensorPlacement[3])
+                  .addPlacement(mSensorPlacement[7])
+                  .addPlacement(mSensorPlacement[11]);
+
+        }
         mRecordingWriter.queueData(builder.build());
     }
 
@@ -229,6 +242,16 @@ public class IMUManager implements SensorEventListener {
             if (syncedData != null && mRecordingInertialData) {
                 writeData(syncedData);
             }
+        }
+    }
+
+    @Override
+    public final void onSensorAdditionalInfo(SensorAdditionalInfo info) {
+        if (mSensorPlacement != null) {
+            return;
+        }
+        if ((info.sensor == mAccel) && (info.type == SensorAdditionalInfo.TYPE_SENSOR_PLACEMENT)) {
+            mSensorPlacement = info.floatValues;
         }
     }
 

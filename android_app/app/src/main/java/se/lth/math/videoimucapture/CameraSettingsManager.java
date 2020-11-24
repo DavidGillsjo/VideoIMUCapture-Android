@@ -2,9 +2,7 @@ package se.lth.math.videoimucapture;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
-import android.graphics.Camera;
 import android.graphics.Rect;
-import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
@@ -36,7 +34,7 @@ import java.util.stream.Collectors;
 
 
 public class CameraSettingsManager {
-    private enum Setting {OIS, OIS_DATA, DVS, VIDEO_SIZE, FOCUS_MODE, EXPOSURE_MODE, ZOOM_RATIO, PHYSICAL_CAMERA};
+    private enum Setting {OIS, OIS_DATA, DVS, DISTORTION_CORRECTION, VIDEO_SIZE, FOCUS_MODE, EXPOSURE_MODE, ZOOM_RATIO, PHYSICAL_CAMERA};
     private Map<Setting, CameraSetting> mCameraSettings;
     private boolean mInitialized = false;
 
@@ -81,7 +79,7 @@ public class CameraSettingsManager {
                 )
         );
 
-        if (Build.VERSION.SDK_INT > 28) {
+        if (Build.VERSION.SDK_INT >= 28) {
             mCameraSettings.put(Setting.OIS_DATA,
                     new CameraSettingBoolean(
                             "ois_data",
@@ -107,6 +105,23 @@ public class CameraSettingsManager {
                 )
         );
 
+        if (Build.VERSION.SDK_INT >= 28) {
+            mCameraSettings.put(Setting.DISTORTION_CORRECTION,
+                    new CameraSettingBoolean(
+                            "distortion_correction",
+                            cameraCharacteristics.get(CameraCharacteristics.DISTORTION_CORRECTION_AVAILABLE_MODES),
+                            CameraMetadata.DISTORTION_CORRECTION_MODE_HIGH_QUALITY,
+                            CameraMetadata.DISTORTION_CORRECTION_MODE_OFF,
+                            CaptureRequest.DISTORTION_CORRECTION_MODE,
+                            false
+                    )
+            );
+        } else {
+            mCameraSettings.put(Setting.OIS_DATA,
+                    new CameraSettingBoolean("ois_data", null, 1, null, false)
+            );
+        }
+
         mCameraSettings.put(Setting.VIDEO_SIZE, new CameraSettingVideoSize(cameraCharacteristics));
         mCameraSettings.put(Setting.FOCUS_MODE, new CameraSettingFocusMode(cameraCharacteristics));
         mCameraSettings.put(Setting.EXPOSURE_MODE, new CameraSettingExposureMode(cameraCharacteristics));
@@ -131,6 +146,10 @@ public class CameraSettingsManager {
 
     public Boolean OISDataEnabled() {
         return ((CameraSettingBoolean) mCameraSettings.get(Setting.OIS_DATA)).isOn();
+    }
+
+    public Boolean DistortionCorrectionEnabled() {
+        return ((CameraSettingBoolean) mCameraSettings.get(Setting.DISTORTION_CORRECTION)).isOn();
     }
 
     public Size getVideoSize() {
@@ -178,29 +197,55 @@ abstract class CameraSetting {
 
 //Camera setting default is handled through the Preference XML file.
 class CameraSettingBoolean extends CameraSetting {
-    private int mOnValue;
-    private Boolean mDefaultOn;
+    private int mOnValue, mOffValue;
+    private Boolean mDefaultOn, mRequestable;
 
     public CameraSettingBoolean(String prefKey,
                                 int[] modes,
                                 int onValue,
                                 CaptureRequest.Key requestKey,
                                 Boolean defaultOn) {
+        this(prefKey, modes, onValue, 1-onValue, requestKey, defaultOn);
+
+    }
+
+    public CameraSettingBoolean(String prefKey,
+                                int[] modes,
+                                int onValue,
+                                int offValue,
+                                CaptureRequest.Key requestKey,
+                                Boolean defaultOn) {
         mPrefKey = prefKey;
         mRequestKey = requestKey;
         mOnValue = onValue;
-        mConfigurable = false;
-        boolean forceDefault = true;
+        mOffValue = offValue;
+        boolean forceDefault;
+
+        boolean offAvailable = false;
+        boolean onAvailable = false;
+        if (modes != null) {
+            for (int m : modes) {
+                offAvailable |= (m == offValue);
+                onAvailable |= (m == onValue);
+            }
+        }
 
         //Figure out valid default value
-        if ((modes == null) || (modes.length == 0)) {
-            mDefaultOn = false;
-        } else if (modes.length == 1) {
-            mDefaultOn = (modes[0] == mOnValue);
-        } else {
+        if (offAvailable && onAvailable) {
             mDefaultOn = defaultOn;
             mConfigurable = true;
+            mRequestable = true;
             forceDefault = mRestoreDefault;
+        } else if (!offAvailable && !onAvailable) {
+            mDefaultOn = false;
+            mConfigurable = false;
+            mRequestable = false;
+            forceDefault = true;
+        } else {
+            mDefaultOn = onAvailable;
+            mConfigurable = false;
+            mRequestable = true;
+            forceDefault = true;
         }
         //Set default if not present
         if (!mSharedPreferences.contains(prefKey) || forceDefault) {
@@ -209,18 +254,18 @@ class CameraSettingBoolean extends CameraSetting {
     }
 
     public Boolean isOn() {
-        return mSharedPreferences.getBoolean(mPrefKey, false);
+        return mSharedPreferences.getBoolean(mPrefKey, mDefaultOn);
     }
 
     @Override
     public void updateCaptureRequest(CaptureRequest.Builder builder) {
-        if (!mConfigurable) {
+        if (!mRequestable) {
             return;
         }
         if (isOn()) {
             builder.set(mRequestKey, mOnValue);
         } else {
-            builder.set(mRequestKey, 1-mOnValue);
+            builder.set(mRequestKey, mOffValue);
         }
     }
 
