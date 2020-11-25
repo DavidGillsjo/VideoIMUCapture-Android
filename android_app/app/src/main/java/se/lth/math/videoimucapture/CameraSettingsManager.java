@@ -564,7 +564,7 @@ class CameraSettingExposureMode extends CameraSetting {
     private List<Mode> mValidModes = new ArrayList<>();
     private final Mode DEFAULT_MODE = Mode.AUTO;
     private float DEFAULT_EXPOSURE_MS = 5f;
-    private float MAX_EXPOSURE_MS =100f; // 100ms, Much more does not make sense
+    private float MAX_EXPOSURE_MS =30f; // 30ms, More is not feasible given 30 fps requirement.
     private int DEFAULT_ISO =200;
     private int MAX_ISO =2000; // Much more does not make sense
     private final float EXPOSURE_RESOLUTION = 1e-2f;
