@@ -126,7 +126,6 @@ public class Camera2Proxy {
 
 
             // Find out if we need to swap dimension to get the preview size relative to sensor coordinate.
-            int displayRotation = mActivity.getWindowManager().getDefaultDisplay().getRotation();
             mSensorOrientation = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
             mSwappedDimensions = (mSensorOrientation == 90 || mSensorOrientation == 270);
 
