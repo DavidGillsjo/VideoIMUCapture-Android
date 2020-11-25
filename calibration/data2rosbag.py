@@ -114,11 +114,12 @@ def create_camera_yaml(proto, camera_yaml_path, matlab_calibration=None):
         yaml.safe_dump({'cam0':camera_dict}, f, default_flow_style=False)
 
 def create_imu_yaml(proto, imu_yaml_path):
+    #Noise density values from pixel 3 IMU datasheet
     imu_dict = {
         'accelerometer_noise_density': 9.8*180e-6,   #Noise density (continuous-time)
-        'accelerometer_random_walk':   4.33e-04,   #Bias random walk
+        'accelerometer_random_walk':   9.8*180e-6,   #Bias random walk
         'gyroscope_noise_density':     0.007*np.pi/180.0,   #Noise density (continuous-time)
-        'gyroscope_random_walk':       2.66e-05,   #Bias random walk
+        'gyroscope_random_walk':       0.007*np.pi/180.0,   #Bias random walk
         'rostopic':                    '/imu0',      #the IMU ROS topic
         'update_rate':                 proto.imu_meta.sample_frequency   #Hz (for discretization of the values above)
     }
