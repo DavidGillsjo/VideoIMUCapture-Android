@@ -63,6 +63,8 @@ public class Camera2Proxy {
     private volatile boolean mRecordingMetadata = false;
     private boolean mSwappedDimensions;
     private int mSensorOrientation;
+    private boolean mExposureTriggered = false;
+    private boolean mFocusTriggered = false;
 
     private FocalLengthHelper mFocalLengthHelper = new FocalLengthHelper();
 
@@ -272,10 +274,20 @@ public class Camera2Proxy {
 
 
                     if (mCameraSettingsManager.focusOnTouch()) {
+                        mFocusTriggered |= (result.get(CaptureResult.CONTROL_AF_STATE) == CaptureResult.CONTROL_AF_STATE_ACTIVE_SCAN);
+                    }
+                    if (mCameraSettingsManager.exposureOnTouch()) {
+                        mExposureTriggered |= (result.get(CaptureResult.CONTROL_AE_STATE) == CaptureResult.CONTROL_AE_STATE_SEARCHING);
+                    }
+
+                    if (mFocusTriggered) {
+                        //Log.d(TAG, "Focus state:" + result.get(CaptureResult.CONTROL_AF_STATE));
                         // We are handling auto-focus, cancel if focused to go back inactive state.
                         // Seems necessary on some phones, even though the documentation says otherwise.
                         if ((result.get(CaptureResult.CONTROL_AF_STATE) == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED) ||
                                 (result.get(CaptureResult.CONTROL_AF_STATE) == CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED)) {
+
+                            mFocusTriggered = false;
 
                             // Send single cancel event
                             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
@@ -287,9 +299,28 @@ public class Camera2Proxy {
                                 e.printStackTrace();
                             }
 
-                            // Reset trigger for future requests
+                            //Reset trigger for future calls
                             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                                     CaptureRequest.CONTROL_AF_TRIGGER_IDLE);
+                        }
+
+                    }
+
+                    if (mCameraSettingsManager.exposureOnTouch() && !mFocusTriggered && mExposureTriggered) {
+                        // We are handling auto-exposure, lock if converged.
+                        // Wait for auto-focus to finish first
+                        Log.d(TAG, "Exposure state:" + result.get(CaptureResult.CONTROL_AE_STATE));
+                        if (result.get(CaptureResult.CONTROL_AE_STATE) != CaptureResult.CONTROL_AE_STATE_SEARCHING) {
+                            mExposureTriggered = false;
+                            //Lock AE
+                            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, true);
+                            try {
+                                mCaptureSession.setRepeatingRequest(
+                                        mPreviewRequestBuilder.build(), mSessionCaptureCallback, mBackgroundHandler);
+                            } catch (CameraAccessException e) {
+                                e.printStackTrace();
+                            }
+
                         }
                     }
 
@@ -320,7 +351,7 @@ public class Camera2Proxy {
 
 
     void changeManualFocusPoint(float eventX, float eventY, int viewWidth, int viewHeight) {
-        if (!mCameraSettingsManager.focusOnTouch()) {
+        if (!mCameraSettingsManager.focusOnTouch() && !mCameraSettingsManager.exposureOnTouch()) {
             return;
         }
         // Set region for focus, must be present in all capture requests during auto focus.
@@ -339,8 +370,18 @@ public class Camera2Proxy {
                 halfTouchWidth * 2,
                 halfTouchHeight * 2,
                 MeteringRectangle.METERING_WEIGHT_MAX - 1);
-        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS,
-                new MeteringRectangle[]{focusAreaTouch});
+
+        // Set metering regions and AE mode
+        if (mCameraSettingsManager.focusOnTouch()) {
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS,
+                    new MeteringRectangle[]{focusAreaTouch});
+        }
+        if (mCameraSettingsManager.exposureOnTouch()) {
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_REGIONS,
+                    new MeteringRectangle[]{focusAreaTouch});
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
+        }
+        // Update running requests with metering regions
         try {
             mCaptureSession.setRepeatingRequest(
                     mPreviewRequestBuilder.build(),
@@ -349,21 +390,23 @@ public class Camera2Proxy {
             e.printStackTrace();
         }
 
-        // Send single trigger event
-        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
-                CameraMetadata.CONTROL_AF_TRIGGER_START);
+        // Send triggers
+        if (mCameraSettingsManager.focusOnTouch()) {
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+                    CameraMetadata.CONTROL_AF_TRIGGER_START);
 
-        try {
-            mCaptureSession.capture(
-                    mPreviewRequestBuilder.build(),
-                    mSessionCaptureCallback, mBackgroundHandler);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
+            try {
+                mCaptureSession.capture(
+                        mPreviewRequestBuilder.build(),
+                        mSessionCaptureCallback, mBackgroundHandler);
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
+
+            // Reset Trigger state for future requests
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+                    CaptureRequest.CONTROL_AF_TRIGGER_IDLE);
         }
-
-        // Reset Trigger state for feature requests
-        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_TRIGGER_IDLE);
     }
 
     public void writeCameraInfo() {

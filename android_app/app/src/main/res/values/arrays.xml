@@ -5,7 +5,8 @@
         <item>Manual</item>
     </string-array>
     <string-array name="exposure_mode_desc" >
-        <item>Auto</item>
+        <item>Continuous</item>
+        <item>Fix on Touch</item>
         <item>Manual</item>
     </string-array>
 

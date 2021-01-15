@@ -160,6 +160,11 @@ public class CameraSettingsManager {
         return ((CameraSettingFocusMode) mCameraSettings.get(Setting.FOCUS_MODE)).getMode()
                 == CameraSettingFocusMode.FocusMode.TOUCH_AUTO;
     }
+
+    public Boolean exposureOnTouch() {
+        return ((CameraSettingExposureMode) mCameraSettings.get(Setting.EXPOSURE_MODE)).getMode()
+                == CameraSettingExposureMode.Mode.TOUCH_AUTO;
+    }
     
 }
 
@@ -549,10 +554,12 @@ class CameraSettingFocusMode extends CameraSetting {
                 break;
             case TOUCH_AUTO:
                 builder.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_AUTO);
+                builder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_IDLE);
                 builder.set(CaptureRequest.LENS_FOCUS_DISTANCE, getFocusDistance());
                 break;
             case CONTINUOUS_AUTO:
                 builder.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
+                builder.set(CaptureRequest.CONTROL_AF_REGIONS, null);
                 break;
         }
     }
@@ -560,9 +567,9 @@ class CameraSettingFocusMode extends CameraSetting {
 
 class CameraSettingExposureMode extends CameraSetting {
 
-    enum Mode {AUTO, MANUAL}
+    enum Mode {CONTINUOUS_AUTO, TOUCH_AUTO, MANUAL}
     private List<Mode> mValidModes = new ArrayList<>();
-    private final Mode DEFAULT_MODE = Mode.AUTO;
+    private final Mode DEFAULT_MODE = Mode.TOUCH_AUTO;
     private float DEFAULT_EXPOSURE_MS = 5f;
     private float MAX_EXPOSURE_MS =30f; // 30ms, More is not feasible given 30 fps requirement.
     private int DEFAULT_ISO =200;
@@ -584,7 +591,8 @@ class CameraSettingExposureMode extends CameraSetting {
                     mValidModes.add(Mode.MANUAL);
                     break;
                 case CameraCharacteristics.CONTROL_AE_MODE_ON:
-                    mValidModes.add(Mode.AUTO);
+                    mValidModes.add(Mode.TOUCH_AUTO);
+                    mValidModes.add(Mode.CONTINUOUS_AUTO);
                     break;
             }
         }
@@ -635,7 +643,15 @@ class CameraSettingExposureMode extends CameraSetting {
 
 
     public Mode getMode() {
-        return Mode.valueOf(getModeString());
+        Mode mode;
+        try {
+             mode = Mode.valueOf(getModeString());
+        } catch (IllegalArgumentException e) {
+            // Stored mode is no longer valid, go to default.
+            mSharedPreferences.edit().putString(mModePrefKey, DEFAULT_MODE.toString()).apply();
+            mode = DEFAULT_MODE;
+        }
+        return mode;
     }
 
     private String getModeString() {
@@ -712,8 +728,12 @@ class CameraSettingExposureMode extends CameraSetting {
                 builder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, getExposureNs());
                 builder.set(CaptureRequest.SENSOR_SENSITIVITY, getISO());
                 break;
-            case AUTO:
+            case TOUCH_AUTO:
                 builder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_ON);
+                builder.set(CaptureRequest.CONTROL_AE_LOCK, true);
+            case CONTINUOUS_AUTO:
+                builder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_ON);
+                builder.set(CaptureRequest.CONTROL_AE_REGIONS, null);
         }
     }
 }
