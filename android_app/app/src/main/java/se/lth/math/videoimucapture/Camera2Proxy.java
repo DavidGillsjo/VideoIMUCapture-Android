@@ -377,8 +377,8 @@ public class Camera2Proxy {
         Size resolution = mCameraSettingsManager.getVideoSize();
         metaBuilder.setResolution(
                 RecordingProtos.CameraInfo.Size.newBuilder()
-                        .setHeight(resolution.getHeight())
-                        .setWidth(resolution.getWidth())
+                        .setHeight(mSwappedDimensions ? resolution.getWidth() : resolution.getHeight())
+                        .setWidth(mSwappedDimensions ?  resolution.getHeight() : resolution.getWidth())
         );
         Rect arraySize = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_PRE_CORRECTION_ACTIVE_ARRAY_SIZE);
         metaBuilder.setPreCorrectionActiveArraySize(
