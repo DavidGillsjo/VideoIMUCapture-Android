@@ -124,7 +124,7 @@ public class Camera2Proxy {
 
 
             mFocalLengthHelper.setLensParams(mCameraCharacteristics);
-            mFocalLengthHelper.setmImageSize(videoSize);
+            mFocalLengthHelper.setImageSize(videoSize);
 
 
             // Find out if we need to swap dimension to get the preview size relative to sensor coordinate.
@@ -456,7 +456,7 @@ public class Camera2Proxy {
 
         float[] intrinsics = mCameraCharacteristics.get(CameraCharacteristics.LENS_INTRINSIC_CALIBRATION);
         if ((intrinsics != null) && (abs(intrinsics[0]) > 0)) {
-            for (float e : mFocalLengthHelper.getScaledIntrinsic()) {
+            for (float e : mFocalLengthHelper.getTransformedIntrinsic()) {
                 metaBuilder.addIntrinsicParams(e);
             }
             for (float e : intrinsics) {
@@ -516,17 +516,16 @@ public class Camera2Proxy {
             frameBuilder.setFocusDistanceDiopters(fDist);
         }
 
-        if (Build.VERSION.SDK_INT > 28) {
+        if (Build.VERSION.SDK_INT >= 28) {
             OisSample[] oisSamples = result.get(CaptureResult.STATISTICS_OIS_SAMPLES);
             if (oisSamples != null) {
-                float x_scale = mFocalLengthHelper.getXScale();
-                float y_scale = mFocalLengthHelper.getYScale();
                 for (OisSample sample : oisSamples) {
+                    float[] scaledSample = mFocalLengthHelper.transformOISSample(sample);
                     RecordingProtos.VideoFrameMetaData.OISSample.Builder oisBuilder =
                             RecordingProtos.VideoFrameMetaData.OISSample.newBuilder()
                                     .setTimeNs(sample.getTimestamp())
-                                    .setXShift(x_scale*sample.getXshift())
-                                    .setYShift(y_scale*sample.getYshift());
+                                    .setXShift(scaledSample[0])
+                                    .setYShift(scaledSample[1]);
                     frameBuilder.addOISSamples(oisBuilder);
                 }
             }

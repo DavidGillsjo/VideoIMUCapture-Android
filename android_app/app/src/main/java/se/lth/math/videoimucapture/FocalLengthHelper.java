@@ -5,9 +5,13 @@ package se.lth.math.videoimucapture;
 
 import android.graphics.Rect;
 import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.params.OisSample;
+import android.os.Build;
 import android.util.Log;
 import android.util.Size;
 import android.util.SizeF;
+
+import androidx.annotation.RequiresApi;
 
 import static java.lang.Math.abs;
 
@@ -16,6 +20,7 @@ public class FocalLengthHelper {
     private static final String TAG = "FocalLengthHelper";
 
     private float[] mIntrinsic;
+    private float[] mTransformedIntrinsic;
     private float[] mDistortion;
     private Float mFocalLength;
     private Float mFocusDistance;
@@ -26,6 +31,7 @@ public class FocalLengthHelper {
     private Rect mCropRegion; // Its The coordinate system is defined relative to the active array rectangle given in this field, with (0, 0) being the top-left of this rectangle.
     private Size mImageSize;
     private int mSensorOrientation;
+    private Float mScale;
 
     public FocalLengthHelper() {
 
@@ -43,8 +49,23 @@ public class FocalLengthHelper {
         this.mFocusDistance = mFocusDistance;
     }
 
-    public void setmImageSize(Size mImageSize) {
+    public float getScale() { return mScale; }
+
+    public void setImageSize(Size mImageSize) {
         this.mImageSize = mImageSize;
+        if (mPreCorrectionSize != null) {
+            setScale();
+        }
+    }
+
+    // Assume the larger dimension will remain uncropped.
+    // So even if the sensor has ratio 4:3 and the image has 16:9 we will scale the intrinsics accordingly.
+    private void setScale() {
+        if (mImageSize.getWidth() > mImageSize.getHeight()) {
+            mScale = (float) mImageSize.getWidth() / mPreCorrectionSize.width();
+        } else {
+            mScale = (float) mImageSize.getHeight() / mPreCorrectionSize.height();
+        }
     }
 
     // compute the distance between the lens and the imaging sensor, i
@@ -113,63 +134,92 @@ public class FocalLengthHelper {
         if (mPreCorrectionSize != null)
             Log.d(TAG, "Precorrection rect " + mPreCorrectionSize.toString());
         mSensorOrientation = result.get(CameraCharacteristics.SENSOR_ORIENTATION);
+
+        if (mImageSize != null) {
+            setScale();
+        }
     }
 
-    public float getXScale() {
-        return (float)mImageSize.getWidth()/mPreCorrectionSize.width();
-    }
-    public float getYScale() {
-        return (float)mImageSize.getHeight()/mPreCorrectionSize.height();
-    }
+
 
     // Scale intrinsic parameters to image coordinates instead of sensor array coordinates.
     // Apply rotation in sensor coordinate system to get to device coordinate system,
     // since we store the image in device coordinate system orientation.
-    public float[] getScaledIntrinsic() {
-        float x_scale = getXScale();
-        float y_scale = getYScale();
-        float[] scaledIntrinsic;
+    public float[] getTransformedIntrinsic() {
+        float scale = getScale();
+        float[] transformedIntrinsic;
         float skew;
         switch (mSensorOrientation) {
+            default:
             case 0:
-                scaledIntrinsic =  new float[]{
-                        x_scale*mIntrinsic[0],
-                        y_scale*mIntrinsic[1],
-                        x_scale*mIntrinsic[2],
-                        y_scale*mIntrinsic[3],
+                transformedIntrinsic =  new float[]{
+                        scale*mIntrinsic[0],
+                        scale*mIntrinsic[1],
+                        scale*mIntrinsic[2],
+                        scale*mIntrinsic[3],
                         mIntrinsic[4]};
                 break;
             case 90:
                 skew = abs(mIntrinsic[4]) > 1e-5 ? 1/mIntrinsic[4] : 0;
-                scaledIntrinsic =  new float[]{
-                        x_scale*mIntrinsic[1],
-                        y_scale*mIntrinsic[0],
-                        (float)mImageSize.getHeight() - x_scale*mIntrinsic[3] - 1,
-                        y_scale*mIntrinsic[2],
+                transformedIntrinsic =  new float[]{
+                        scale*mIntrinsic[1],
+                        scale*mIntrinsic[0],
+                        (float)mImageSize.getHeight() - scale*mIntrinsic[3] - 1,
+                        scale*mIntrinsic[2],
                         skew};
                 break;
             case 180:
-                scaledIntrinsic =  new float[]{
-                        x_scale*mIntrinsic[0],
-                        y_scale*mIntrinsic[1],
-                        (float)mImageSize.getWidth() - x_scale*mIntrinsic[2] - 1,
-                        (float)mImageSize.getHeight() - y_scale*mIntrinsic[3] - 1,
+                transformedIntrinsic =  new float[]{
+                        scale*mIntrinsic[0],
+                        scale*mIntrinsic[1],
+                        (float)mImageSize.getWidth() - scale*mIntrinsic[2] - 1,
+                        (float)mImageSize.getHeight() - scale*mIntrinsic[3] - 1,
                         mIntrinsic[4]};
                 break;
             case 270:
                 skew = abs(mIntrinsic[4]) > 1e-5 ? 1/mIntrinsic[4] : 0;
-                scaledIntrinsic =  new float[]{
-                        x_scale*mIntrinsic[1],
-                        y_scale*mIntrinsic[0],
-                        y_scale*mIntrinsic[3],
-                        (float)mImageSize.getWidth() - x_scale*mIntrinsic[2] - 1,
+                transformedIntrinsic =  new float[]{
+                        scale*mIntrinsic[1],
+                        scale*mIntrinsic[0],
+                        scale*mIntrinsic[3],
+                        (float)mImageSize.getWidth() - scale*mIntrinsic[2] - 1,
                         skew};
                 break;
-            default:
-                scaledIntrinsic = new float[] {0,0,0,0,0};
 
         }
-        return scaledIntrinsic;
+        return transformedIntrinsic;
+    }
+
+
+
+    @RequiresApi(api = Build.VERSION_CODES.P)
+    public float[] transformOISSample(OisSample sample) {
+        float[] xy_shift;
+        float scale = getScale();
+        switch (mSensorOrientation) {
+            default:
+            case 0:
+                xy_shift =  new float[]{
+                        scale*sample.getXshift(),
+                        scale*sample.getYshift()};
+                break;
+            case 90:
+                xy_shift =  new float[]{
+                        -scale*sample.getYshift(),
+                        scale*sample.getXshift()};
+                break;
+            case 180:
+                xy_shift =  new float[]{
+                        -scale*sample.getXshift(),
+                        -scale*sample.getYshift()};
+                break;
+            case 270:
+                xy_shift =  new float[]{
+                        scale*sample.getYshift(),
+                        -scale*sample.getXshift()};
+                break;
+        }
+        return xy_shift;
     }
 
 }
