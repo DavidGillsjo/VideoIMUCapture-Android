@@ -40,11 +40,18 @@ def camera_stats(proto, result_path):
         for stat, stat_list in scalar_stats.items():
             stat_list.append(getattr(frame_data, stat))
 
-    fig,ax = plt.subplots(len(scalar_stats), 1, sharex='all', figsize=FIG_SIZE)
+    fig,ax = plt.subplots(len(scalar_stats)+1, 1, sharex='all', figsize=FIG_SIZE)
     for i, (stat, stat_list) in enumerate(scalar_stats.items()):
         ax[i].set_title(stat)
-        ax[i].plot(time_ns, stat_list)
-    ax[-1].set_xlabel('Timestamp')
+        ax[i].plot(time_ns, stat_list, '.-')
+
+
+    # Plot timestamp diff
+    ax[-1].set_title("Timestamp diff [ms]")
+    time_ms = np.array(time_ns)*1e-6
+    diff = time_ms[1:] - time_ms[:-1]
+    ax[-1].plot(time_ns[1:], diff, '.-')
+    ax[-1].set_xlabel('Timestamp [ns]')
     fig.tight_layout()
     plt.savefig(osp.join(result_path, 'video_meta.svg'))
 
@@ -69,7 +76,7 @@ def ois_stats(proto, result_path):
     fig,ax = plt.subplots(len(ois_data), 1, sharex='all', figsize=FIG_SIZE)
     for i, (stat, stat_list) in enumerate(ois_data.items()):
         ax[i].set_title(stat)
-        ax[i].plot(time_ns, stat_list)
+        ax[i].plot(time_ns, stat_list, '.-')
     ax[-1].set_xlabel('Timestamp')
     fig.tight_layout()
     plt.savefig(osp.join(result_path, 'ois_samples.svg'))
@@ -102,13 +109,13 @@ def imu_stats(proto, result_path):
     fig,ax = plt.subplots(nbr_plots, 1, sharex='all', figsize=FIG_SIZE)
     for i, (stat, stat_list) in enumerate(scalar_stats.items()):
         ax[i].set_title(stat)
-        ax[i].plot(time_ns, stat_list)
+        ax[i].plot(time_ns, stat_list, '.-')
 
     for i, (stat, stat_list) in enumerate(xyz_stats.items()):
         j = 3*i + len(scalar_stats)
         for k, d in enumerate(stat_list):
             ax[k+j].set_title('{}_{}'.format(stat, k))
-            ax[k+j].plot(time_ns, d)
+            ax[k+j].plot(time_ns, d, '.-')
 
     ax[-1].set_xlabel('Timestamp')
     fig.tight_layout()

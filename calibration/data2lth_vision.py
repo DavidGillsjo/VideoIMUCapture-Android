@@ -8,6 +8,7 @@ import csv
 import yaml
 from pyquaternion import Quaternion
 import numpy as np
+import shutil
 
 # Subclass dumper to get indentation in YAML, required for OpenCV
 class OpenCVDumper(yaml.SafeDumper):
@@ -24,6 +25,12 @@ class OpenCVDumper(yaml.SafeDumper):
 
 def convert_to_lth(proto, result_path):
 
+    video_dir = osp.join(result_dir, 'video')
+    try:
+        os.mkdir(video_dir)
+    except OSError:
+        pass
+
     # Extract video timestamps
     frame_list = []
     for i,frame_data in enumerate(proto.video_meta):
@@ -32,7 +39,7 @@ def convert_to_lth(proto, result_path):
             'time': float(frame_data.time_ns)
         })
 
-    with open(osp.join(result_path, 'video.data'), 'w') as f:
+    with open(osp.join(video_dir, 'video.data'), 'w') as f:
         yaml.dump({'video': frame_list}, f, Dumper=OpenCVDumper)
 
     # Extract IMU data
@@ -46,12 +53,18 @@ def convert_to_lth(proto, result_path):
             'time_synced':0.0
         })
 
-    with open(osp.join(result_path, 'imu.data'), 'w') as f:
+    with open(osp.join(video_dir, 'imu.data'), 'w') as f:
         yaml.dump({'imu': imu_list}, f, Dumper=OpenCVDumper)
 
     # Write sync
-    with open(osp.join(result_path, 'sync.data'), 'w') as f:
+    with open(osp.join(video_dir, 'sync.data'), 'w') as f:
         yaml.dump({'sync': [{'delay': 0.0}]}, f, Dumper=OpenCVDumper)
+
+
+
+def copy_video(data_path, result_dir):
+    shutil.copyfile(osp.join(data_path, 'video_recording.mp4'),
+                    osp.join(result_dir, 'video', 'video.mp4'))
 
 def copy_calib(kalibr_path, result_dir):
     with open(kalibr_path, 'r') as f:
@@ -87,6 +100,7 @@ if __name__ == "__main__":
         proto = VideoCaptureData.FromString(f.read())
 
     convert_to_lth(proto, result_dir)
+    copy_video(args.data_dir, result_dir)
 
     if args.kalibr:
         copy_calib(args.kalibr, result_dir)

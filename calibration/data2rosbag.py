@@ -96,8 +96,12 @@ def create_camera_yaml(proto, camera_yaml_path, matlab_calibration=None):
             tangential_dist = next(csvreader)
     else:
         intrinsics = c.intrinsic_params[:4]
-        radial_dist = list(c.distortion_params[:2])
-        tangential_dist = list(c.distortion_params[3:])
+        if c.distortion_params:
+            radial_dist = list(c.distortion_params[:2])
+            tangential_dist = list(c.distortion_params[3:])
+        else:
+            radial_dist = [0.0]*2
+            tangential_dist = [0.0]*2
     camera_dict = {
         'camera_model': 'pinhole',
         'intrinsics': intrinsics,
