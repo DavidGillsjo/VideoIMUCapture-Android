@@ -29,7 +29,7 @@ For the video capture it uses the Camera2 API.
 To install on your Android device go to the [Release page](https://github.com/DavidGillsjo/VideoIMUCapture-Android/releases) from your Android device browser and download the latest `.apk` file. You will need to give your browser permission to install the application, but Android should guide you through the necessary steps.
 
 # Calibration
-To use the data for 3D reconstruction you will need to calibrate the IMU and Camera, see [CALIBRATION.md](calibration.CALIBRATION.md) for help.
+To use the data for 3D reconstruction you will need to calibrate the IMU and Camera, see [Calibration README](calibration/README.md) for help.
 
 # Feedback
 If you find any bugs or have feature requests, please create an [issue](https://github.com/DavidGillsjo/VideoIMUCapture-Android/issues) on this Github page.
