@@ -13,6 +13,7 @@ from cv_bridge import CvBridge
 import yaml
 from pyquaternion import Quaternion
 import numpy as np
+import shutil
 
 bridge = CvBridge()
 NSECS_IN_SEC=long(1e9)
@@ -150,7 +151,8 @@ if __name__ == "__main__":
     parser.add_argument('--result-dir', type=str, help='Path to result folder, default same as proto', default = None)
     parser.add_argument('--tag-size', type=float, help='Tag size for april grid', default = 24e-3)
     parser.add_argument('--subsample', type=int, help='Take every n-th video frame', default = 1)
-    parser.add_argument('--matlab-calibration', type=str, help='Txt file with matlab calibration', default = None)
+    parser.add_argument('--matlab-calibration', type=str, help='Txt file with matlab camera calibration', default = None)
+    parser.add_argument('--kalibr-calibration', type=str, help='YAML file with kalibr camera calibration', default = None)
 
     args = parser.parse_args()
     result_dir = args.result_dir if args.result_dir else osp.join(args.data_dir, 'kalibr')
@@ -169,7 +171,10 @@ if __name__ == "__main__":
     convert_to_bag(proto, video_path, bag_path, args.subsample)
 
     camera_yaml_path = osp.join(result_dir, 'camchain.yaml')
-    create_camera_yaml(proto, camera_yaml_path, args.matlab_calibration)
+    if args.kalibr_calibration:
+        shutil.copy(args.kalibr_calibration, camera_yaml_path)
+    else:
+        create_camera_yaml(proto, camera_yaml_path, args.matlab_calibration)
     imu_yaml_path = osp.join(result_dir, 'imu.yaml')
     create_imu_yaml(proto, imu_yaml_path)
     target_yaml_path = osp.join(result_dir, 'target.yaml')
