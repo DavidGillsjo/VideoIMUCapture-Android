@@ -8,11 +8,18 @@ ARG gid=1000
 RUN apt-get update && apt-get install -y \
 		sudo \
 		wget \
+		ssh \
 		zip \
 		&& \
 	apt-get clean && \
 	apt-get autoremove && \
 	rm -rf /var/lib/apt/lists/*
+
+# Patch file from own Kalibr fork to enable single camera calibration.
+RUN cd /tmp &&\
+	git clone https://github.com/DavidGillsjo/kalibr.git && \
+	cp kalibr/aslam_offline_calibration/kalibr/python/kalibr_camera_calibration/MulticamGraph.py \
+	$KALIBR_WORKSPACE/src/Kalibr/aslam_offline_calibration/kalibr/python/kalibr_camera_calibration/MulticamGraph.py
 
 #Get protoc
 RUN wget -nv "https://github.com/protocolbuffers/protobuf/releases/download/v3.13.0/protoc-3.13.0-linux-x86_64.zip" -O protoc.zip &&\
