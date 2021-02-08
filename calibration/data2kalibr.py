@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     video_path = osp.join(args.data_dir, 'video_recording.mp4')
     bag_path = osp.join(result_dir, 'kalibr.bag')
-    convert_to_bag(proto, video_path, bag_path, args.subsample)
+    convert_to_bag(proto, video_path, bag_path, args.subsample, compress=False)
 
     camera_yaml_path = osp.join(result_dir, 'camchain.yaml')
     if args.kalibr_calibration:

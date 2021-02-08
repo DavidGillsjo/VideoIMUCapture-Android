@@ -10,7 +10,6 @@ import rospy
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import Imu
 from cv_bridge import CvBridge
-import yaml
 from pyquaternion import Quaternion
 import numpy as np
 import shutil
@@ -18,7 +17,7 @@ import shutil
 bridge = CvBridge()
 NSECS_IN_SEC=long(1e9)
 
-def convert_to_bag(proto, video_path, result_path, subsample=1):
+def convert_to_bag(proto, video_path, result_path, subsample=1, compress=True):
     #Init rosbag
     try:
         bag = rosbag.Bag(result_path, 'w')
@@ -31,7 +30,7 @@ def convert_to_bag(proto, video_path, result_path, subsample=1):
             for i,frame_data in enumerate(proto.video_meta):
                 ret, frame = cap.read()
                 if (i % subsample) == 0:
-                    rosimg, timestamp = img_to_rosimg(frame, frame_data.time_ns)
+                    rosimg, timestamp = img_to_rosimg(frame, frame_data.time_ns, compress=compress)
                     bag.write("/cam0/image_raw", rosimg, timestamp)
 
         finally:
@@ -50,12 +49,15 @@ def convert_to_bag(proto, video_path, result_path, subsample=1):
 
 
 
-def img_to_rosimg(img, timestamp_nsecs):
+def img_to_rosimg(img, timestamp_nsecs, compress = True):
     timestamp = rospy.Time(secs=timestamp_nsecs//NSECS_IN_SEC,
                            nsecs=timestamp_nsecs%NSECS_IN_SEC)
 
     gray_img  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    rosimage = bridge.cv2_to_imgmsg(gray_img, "mono8")
+    if compress:
+        rosimage = bridge.cv2_to_compressed_imgmsg(gray_img, dst_format='png')
+    else:
+        rosimage = bridge.cv2_to_imgmsg(gray_img, encoding="mono8")
     rosimage.header.stamp = timestamp
 
     return rosimage, timestamp
@@ -82,6 +84,7 @@ if __name__ == "__main__":
     parser.add_argument('data_dir', type=str, help='Path to folder with video_recording.mp4 and video_meta.pb3')
     parser.add_argument('--result-dir', type=str, help='Path to result folder, default same as proto', default = None)
     parser.add_argument('--subsample', type=int, help='Take every n-th video frame', default = 1)
+    parser.add_argument('--raw-image', action='store_true', help='Store raw images in rosbag')
     parser.add_argument('--calibration', type=str, help='YAML file with kalibr camera and IMU calibration to copy', default = None)
 
     args = parser.parse_args()
@@ -98,7 +101,7 @@ if __name__ == "__main__":
 
     video_path = osp.join(args.data_dir, 'video_recording.mp4')
     bag_path = osp.join(result_dir, 'recording.bag')
-    convert_to_bag(proto, video_path, bag_path, args.subsample)
+    convert_to_bag(proto, video_path, bag_path, args.subsample, not args.raw_image)
 
     if args.calibration:
         shutil.copy(args.calibration, result_dir)
