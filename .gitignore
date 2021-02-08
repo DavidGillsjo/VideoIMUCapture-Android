@@ -86,6 +86,7 @@ lint/tmp/
 
 #Python
 __pycache__
+*.pyc
 
 #Release
 android_app/app/release
