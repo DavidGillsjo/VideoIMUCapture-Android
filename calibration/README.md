@@ -2,40 +2,24 @@
 To use the data for 3D reconstruction we need to calibrate the camera and also calculate the transform between IMU and camera.
 For this there is a docker Image running Kalibr included which understands the proto format.
 
-## Docker Image
-The build assumes we have `../libs/dockers` availabe so we need to pull the code
-```
-git submodule init
-git submodule update
-```
-First build the image by running
-```
-./build_docker.sh
-```
-If you require `sudo` to run you may use
-`SUDO=1 ./build_docker.sh`
-
-Then start a container by running
-```
-./run_docker.sh
-```
-
-If you require `sudo` to run or want to mount a different directory than `$HOME` you may use
-`SUDO=1 DHOME=<custom_home> ./run_docker.sh`
-
-For a full list of options see [dockers README](https://github.com/DavidGillsjo/dockers).
-
-From within the docker you may now navigate to this folder, if you cloned it to
-`$HOME/VideoIMUCapture-Android` then you run
-```
-cd /host_home/VideoIMUCapture-Android/calibration
-```
-to go to this folder from within the docker container.
-
 ## Move the data
 To move the data from your device, mount the phone to your filesystem and
 you will find all data at `/Android/data/se.lth.math.videoimucapture/files/YYYY_MM_DD_hh_mm_ss`.
-We now refer to `<path-to-recording>` as the path to one measurement `<some-path>/YYYY_MM_DD_hh_mm_ss`.
+We now refer to `<path-to-recording>` as the path to one measurement `<my-data-path>/YYYY_MM_DD_hh_mm_ss`.
+
+## Run Docker container
+The easy way to run the docker image is to pull it from Dockerhub.
+The only prerequisite is that you have [docker](https://docs.docker.com/engine/install/ubuntu/) installed.
+Start a container by running
+```
+DATA=<my-data-path> ./run_dockerhub.sh
+```
+If you require `sudo` to run you may use
+`SUDO=1 DATA=<my-data-path> ./run_dockerhub.sh`
+
+You are now in the container and may execute the scripts in this folder or any Kalibr command.
+Your data will now be mounted under `/data`, so `<path-to-recording>=/data/YYYY_MM_DD_hh_mm_ss`.
+
 
 ## Calibrate Camera
 Calibration of the camera will yield intrinsic camera parameters and distortion parameters.
@@ -106,3 +90,30 @@ kalibr_calibrate_imu_camera
   --bag kalibr.bag
 ```
 and you will find the calibration result at `camchain-imucam-kalibr.yaml` together with report `report-imucam-kalibr.pdf`.
+
+## Build and run local Docker Image (Development)
+In case you want to build the image yourself to customize it.
+First build the image by running
+```
+./build_docker.sh
+```
+If you require `sudo` to run you may use
+`SUDO=1 ./build_docker.sh`
+
+Then start a container by running
+```
+./run_docker.sh
+```
+
+If you require `sudo` to run or want to mount a different directory than `$HOME` you may use
+`SUDO=1 DHOME=<custom_home> ./run_docker.sh`
+
+For a full list of options see [dockers README](https://github.com/DavidGillsjo/dockers).
+
+For development purposes, you most likely want to use the code on host instead of container copy.
+From within the docker you may now navigate to this folder, if you cloned it to
+`$HOME/VideoIMUCapture-Android` then you run
+```
+cd /host_home/VideoIMUCapture-Android/calibration
+```
+to go to this folder from within the docker container.
