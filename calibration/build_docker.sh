@@ -1,4 +1,4 @@
 #!/bin/bash
-cp ../protobuf/recording.proto .
-USE_NVIDIA=0 IMAGE=${IMAGE-video_imu_calibration} ./../libs/dockers/common/build.sh "$@"
-rm recording.proto
+./hooks/pre_build
+USE_NVIDIA=0 IMAGE=${IMAGE-"videoimucapture-calibration"} ./../libs/dockers/common/build.sh "$@"
+./hooks/post_build

@@ -54,7 +54,7 @@ See [their instruction](https://github.com/ethz-asl/kalibr/wiki/multiple-camera-
 
 Assuming you To convert the video to images you may use
 ```
-python data2rosbag.py <path-to-recording>
+python data2kalibr.py <path-to-recording>
   --tag-size <measured-april-tag-size>
   --subsample 30
 ```
@@ -86,7 +86,7 @@ Note that this should be a *different dataset* than for calibration of the camer
 
 To convert the recording to their ROS-format and prepare necessary files you may use the supplied script
 ```
-python data2rosbag.py <path-to-recording>
+python data2kalibr.py <path-to-recording>
   --tag-size <measured-april-tag-size>
   --subsample 3
   # If you have MATLAB camera calibration

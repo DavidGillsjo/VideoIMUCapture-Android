@@ -41,6 +41,15 @@ RUN pip install --upgrade pip && \
 VOLUME data
 VOLUME host_home
 
+#Make workspace and copy scripts
+RUN mkdir calibration
+COPY *.py calibration/
+
+#Change owner and let everyone run the scripts
+RUN  chmod -R +rx calibration\
+		&& chown -R "${uid}:${gid}" calibration
+
+WORKDIR calibration
 
 # Setup user
 RUN export uid="${uid}" gid="${gid}" && \
@@ -51,4 +60,5 @@ RUN export uid="${uid}" gid="${gid}" && \
 
 USER "${uid}"
 
+# Interactive unless specified
 CMD bash
