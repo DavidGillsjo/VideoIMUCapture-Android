@@ -1,4 +1,4 @@
-# Calibration Tools
+# Calibration and Data Conversion Tools
 To use the data for 3D reconstruction we need to calibrate the camera and also calculate the transform between IMU and camera.
 For this there is a docker Image running Kalibr included which understands the proto format.
 
@@ -19,7 +19,6 @@ If you require `sudo` to run you may use
 
 You are now in the container and may execute the scripts in this folder or any Kalibr command.
 Your data will now be mounted under `/data`, so `<path-to-recording>=/data/YYYY_MM_DD_hh_mm_ss`.
-
 
 ## Calibrate Camera
 Calibration of the camera will yield intrinsic camera parameters and distortion parameters.
@@ -90,6 +89,12 @@ kalibr_calibrate_imu_camera
   --bag kalibr.bag
 ```
 and you will find the calibration result at `camchain-imucam-kalibr.yaml` together with report `report-imucam-kalibr.pdf`.
+
+## Convert data to rosbag
+See
+```
+python data2rosbag.py --help
+```
 
 ## Build and run local Docker Image (Development)
 In case you want to build the image yourself to customize it.
