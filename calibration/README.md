@@ -7,6 +7,13 @@ To move the data from your device, mount the phone to your filesystem and
 you will find all data at `/Android/data/se.lth.math.videoimucapture/files/YYYY_MM_DD_hh_mm_ss`.
 We now refer to `<path-to-recording>` as the path to one measurement `<my-data-path>/YYYY_MM_DD_hh_mm_ss`.
 
+## Clone repository
+To use the scripts you first need to clone this repository.
+```
+git clone https://github.com/DavidGillsjo/VideoIMUCapture-Android.git
+cd VideoIMUCapture-Android/calibration
+```
+
 ## Run Docker container
 The easy way to run the docker image is to pull it from Dockerhub.
 The only prerequisite is that you have [docker](https://docs.docker.com/engine/install/ubuntu/) installed.
@@ -31,14 +38,15 @@ and look for `intrinsic_params` and `distortion_params`.
 
 It is most likely so that they are not available or not good enough.
 There are many toolboxes for calibrating the camera, we used Kalibr.
+See below for instructions on how to use Kalibr or MATLAB.
 
 ### Kalibr
 See [their instruction](https://github.com/ethz-asl/kalibr/wiki/multiple-camera-calibration) on how to perform the calibration.
 
-Assuming you To convert the video to images you may use
+To convert the video to images you may use
 ```
 python data2kalibr.py <path-to-recording>
-  --tag-size <measured-april-tag-size>
+  --tag-size <measured-april-tag-size-in-meters>
   --subsample 30
 ```
 to convert every 30th frame to an image. (1 image per second)
@@ -70,7 +78,7 @@ Note that this should be a *different dataset* than for calibration of the camer
 To convert the recording to their ROS-format and prepare necessary files you may use the supplied script
 ```
 python data2kalibr.py <path-to-recording>
-  --tag-size <measured-april-tag-size>
+  --tag-size <measured-april-tag-size-in-meters>
   --subsample 3
   # If you have MATLAB camera calibration
   --matlab-calibration <calibration-result-dir>/camera.txt
@@ -91,7 +99,13 @@ kalibr_calibrate_imu_camera
 and you will find the calibration result at `camchain-imucam-kalibr.yaml` together with report `report-imucam-kalibr.pdf`.
 
 ## Convert data to rosbag
-See
+To convert a recording to rosbag you may use
+```
+python data2rosbag.py <path-to-recording>
+  --calibration camchain-imucam-kalibr.yaml # Will copy calibration file
+  --raw-image                               # Store raw images instead of compressed
+```
+See help for more details
 ```
 python data2rosbag.py --help
 ```
