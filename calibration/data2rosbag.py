@@ -13,14 +13,18 @@ from cv_bridge import CvBridge
 from pyquaternion import Quaternion
 import numpy as np
 import shutil
+import yaml
+from utils import OpenCVDumper
+import time
 
 bridge = CvBridge()
 NSECS_IN_SEC=long(1e9)
 
-def convert_to_bag(proto, video_path, result_path, subsample=1, compress=True):
+def convert_to_bag(proto, video_path, result_path, subsample=1, compress_img=False, compress_bag=False):
     #Init rosbag
+    # bz2 is better compression but lz4 is 3 times faster
     try:
-        bag = rosbag.Bag(result_path, 'w')
+        bag = rosbag.Bag(result_path, 'w', compression='lz4' if compress_bag else 'none')
 
         # Open video stream
         try:
@@ -30,7 +34,7 @@ def convert_to_bag(proto, video_path, result_path, subsample=1, compress=True):
             for i,frame_data in enumerate(proto.video_meta):
                 ret, frame = cap.read()
                 if (i % subsample) == 0:
-                    rosimg, timestamp = img_to_rosimg(frame, frame_data.time_ns, compress=compress)
+                    rosimg, timestamp = img_to_rosimg(frame, frame_data.time_ns, compress=compress_img)
                     bag.write("/cam0/image_raw", rosimg, timestamp)
 
         finally:
@@ -46,6 +50,8 @@ def convert_to_bag(proto, video_path, result_path, subsample=1, compress=True):
 
     finally:
         bag.close()
+
+    return (frame.shape[1], frame.shape[0])
 
 
 
@@ -77,31 +83,61 @@ def imu_to_rosimu(timestamp_nsecs, omega, alpha):
 
     return rosimu, timestamp
 
+def adjust_calibration(input_yaml_path, output_yaml_path, resolution):
+    with open(input_yaml_path,'r') as f:
+        calib = yaml.safe_load(f)
 
-if __name__ == "__main__":
+    cam0 = calib['cam0']
+    if cam0['resolution'][0] != resolution[0]:
+        sx = float(resolution[0])/cam0['resolution'][0]
+        cam0['intrinsics'][0] *= sx
+        cam0['intrinsics'][2] *= sx
+        cam0['resolution'][0] = resolution[0]
 
-    parser = argparse.ArgumentParser(description='Convert video and proto to rosbag')
-    parser.add_argument('data_dir', type=str, help='Path to folder with video_recording.mp4 and video_meta.pb3')
-    parser.add_argument('--result-dir', type=str, help='Path to result folder, default same as proto', default = None)
-    parser.add_argument('--subsample', type=int, help='Take every n-th video frame', default = 1)
-    parser.add_argument('--raw-image', action='store_true', help='Store raw images in rosbag')
-    parser.add_argument('--calibration', type=str, help='YAML file with kalibr camera and IMU calibration to copy', default = None)
+    if cam0['resolution'][1] != resolution[1]:
+        sy = float(resolution[1])/cam0['resolution'][1]
+        cam0['intrinsics'][1] *= sy
+        cam0['intrinsics'][3] *= sy
+        cam0['resolution'][1] = resolution[1]
 
-    args = parser.parse_args()
-    result_dir = args.result_dir if args.result_dir else osp.join(args.data_dir, 'rosbag')
+    with open(output_yaml_path,'w') as f:
+        yaml.dump(calib, f, Dumper=OpenCVDumper)
+
+
+def _makedir(new_dir):
     try:
         os.mkdir(result_dir)
     except OSError:
         pass
 
-    # Read proto
-    proto_path = osp.join(args.data_dir, 'video_meta.pb3')
-    with open(proto_path,'rb') as f:
-        proto = VideoCaptureData.FromString(f.read())
+if __name__ == "__main__":
 
-    video_path = osp.join(args.data_dir, 'video_recording.mp4')
-    bag_path = osp.join(result_dir, 'recording.bag')
-    convert_to_bag(proto, video_path, bag_path, args.subsample, not args.raw_image)
+    parser = argparse.ArgumentParser(description='Convert video and proto to rosbag')
+    parser.add_argument('data_dir', type=str, help='Path to folder with video_recording.mp4 and video_meta.pb3 or root-folder containing multiple datasets')
+    parser.add_argument('--result-dir', type=str, help='Path to result folder, default same as proto', default = None)
+    parser.add_argument('--subsample', type=int, help='Take every n-th video frame', default = 1)
+    parser.add_argument('--raw-image', action='store_true', help='Store raw images in rosbag')
+    parser.add_argument('--calibration', type=str, help='YAML file with kalibr camera and IMU calibration to copy, will also adjust for difference in resolution.', default = None)
 
-    if args.calibration:
-        shutil.copy(args.calibration, result_dir)
+    args = parser.parse_args()
+
+    for root, dirnames, filenames in os.walk(args.data_dir):
+        if not 'video_meta.pb3' in filenames:
+            continue
+
+        sub_path = osp.relpath(root,start=args.data_dir)
+        result_dir = osp.join(args.result_dir, sub_path) if args.result_dir else osp.join(root, 'rosbag')
+        _makedir(result_dir)
+
+        # Read proto
+        proto_path = osp.join(root, 'video_meta.pb3')
+        with open(proto_path,'rb') as f:
+            proto = VideoCaptureData.FromString(f.read())
+
+        video_path = osp.join(root, 'video_recording.mp4')
+        bag_path = osp.join(result_dir, 'recording.bag')
+        resolution = convert_to_bag(proto, video_path, bag_path, args.subsample, compress_img = not args.raw_image)
+
+        if args.calibration:
+            out_path = osp.join(result_dir, osp.basename(args.calibration))
+            adjust_calibration(args.calibration, out_path, resolution)
