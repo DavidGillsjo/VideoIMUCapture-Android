@@ -102,9 +102,10 @@ and you will find the calibration result at `camchain-imucam-kalibr.yaml` togeth
 To convert a recording to rosbag you may use
 ```
 python data2rosbag.py <path-to-recording>
-  --calibration camchain-imucam-kalibr.yaml # Will copy calibration file
+  --calibration camchain-imucam-kalibr.yaml # Will copy calibration file and re-scale it to current video resolution.
   --raw-image                               # Store raw images instead of compressed
 ```
+The script will crawl through `<path-to-recording>`, so it may also be a directory with sub-directories containing recordings.
 See help for more details
 ```
 python data2rosbag.py --help
