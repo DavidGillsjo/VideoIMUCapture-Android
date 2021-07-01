@@ -20,10 +20,11 @@ import time
 bridge = CvBridge()
 NSECS_IN_SEC=long(1e9)
 
-def convert_to_bag(proto, video_path, result_path, subsample=1, compress_img=False, compress_bag=False, resize = []):
+def convert_to_bag(proto, video_path, result_path, subsample=1, compress_img=False, compress_bag=False, resize = [], raw_imu =False):
     #Init rosbag
     # bz2 is better compression but lz4 is 3 times faster
     resolution = None
+    img_topic = "/cam0/image_raw/compressed" if compress_img else "/cam0/image_raw"
     try:
         bag = rosbag.Bag(result_path, 'w', compression='lz4' if compress_bag else 'none')
 
@@ -40,14 +41,19 @@ def convert_to_bag(proto, video_path, result_path, subsample=1, compress_img=Fal
                                                                   frame_data.time_ns,
                                                                   compress=compress_img,
                                                                   resize = resize)
-                    bag.write("/cam0/image_raw", rosimg, timestamp)
+                    bag.write(img_topic, rosimg, timestamp)
 
         finally:
             cap.release()
 
         # Now IMU
         for imu_frame in proto.imu:
-            rosimu, timestamp = imu_to_rosimu(imu_frame.time_ns, imu_frame.gyro, imu_frame.accel)
+            if not raw_imu:
+                gyro_drift = getattr(imu_frame, 'gyro_drift', np.zeros(3))
+                accel_bias = getattr(imu_frame, 'accel_bias', np.zeros(3))
+            else:
+                gyro_drift = accel_bias = np.zeros(3)
+            rosimu, timestamp = imu_to_rosimu(imu_frame.time_ns, imu_frame.gyro, gyro_drift, imu_frame.accel, accel_bias)
             bag.write("/imu0", rosimu, timestamp)
 
     finally:
@@ -75,18 +81,18 @@ def img_to_rosimg(img, timestamp_nsecs, compress = True, resize = []):
 
     return rosimage, timestamp, (gray_img.shape[1], gray_img.shape[0])
 
-def imu_to_rosimu(timestamp_nsecs, omega, alpha):
+def imu_to_rosimu(timestamp_nsecs, omega, omega_drift, alpha, alpha_bias):
     timestamp = rospy.Time(secs=timestamp_nsecs//NSECS_IN_SEC,
                            nsecs=timestamp_nsecs%NSECS_IN_SEC)
 
     rosimu = Imu()
     rosimu.header.stamp = timestamp
-    rosimu.angular_velocity.x = omega[0]
-    rosimu.angular_velocity.y = omega[1]
-    rosimu.angular_velocity.z = omega[2]
-    rosimu.linear_acceleration.x = alpha[0]
-    rosimu.linear_acceleration.y = alpha[1]
-    rosimu.linear_acceleration.z = alpha[2]
+    rosimu.angular_velocity.x = omega[0] - omega_drift[0]
+    rosimu.angular_velocity.y = omega[1] - omega_drift[1]
+    rosimu.angular_velocity.z = omega[2] - omega_drift[2]
+    rosimu.linear_acceleration.x = alpha[0] - alpha_bias[0]
+    rosimu.linear_acceleration.y = alpha[1] - alpha_bias[1]
+    rosimu.linear_acceleration.z = alpha[2] - alpha_bias[2]
 
     return rosimu, timestamp
 
@@ -113,7 +119,7 @@ def adjust_calibration(input_yaml_path, output_yaml_path, resolution):
 
 def _makedir(new_dir):
     try:
-        os.mkdir(result_dir)
+        os.mkdir(new_dir)
     except OSError:
         pass
 
@@ -125,6 +131,7 @@ if __name__ == "__main__":
     parser.add_argument('--subsample', type=int, help='Take every n-th video frame', default = 1)
     parser.add_argument('--raw-image', action='store_true', help='Store raw images in rosbag')
     parser.add_argument('--resize', type=int, nargs = 2, default = [], help='Resize image to this <width height>')
+    parser.add_argument('--raw-imu', action='store_true', help='Do not compensate for bias')
     parser.add_argument('--calibration', type=str, help='YAML file with kalibr camera and IMU calibration to copy, will also adjust for difference in resolution.', default = None)
 
     args = parser.parse_args()
@@ -133,7 +140,7 @@ if __name__ == "__main__":
         if not 'video_meta.pb3' in filenames:
             continue
 
-        sub_path = osp.relpath(root,start=args.data_dir)
+        sub_path = '' if osp.samefile(root, args.data_dir) else osp.relpath(root,start=args.data_dir)
         result_dir = osp.join(args.result_dir, sub_path) if args.result_dir else osp.join(root, 'rosbag')
         _makedir(result_dir)
 
@@ -149,7 +156,8 @@ if __name__ == "__main__":
                                     bag_path,
                                     subsample = args.subsample,
                                     compress_img = not args.raw_image,
-                                    resize = args.resize)
+                                    resize = args.resize,
+                                    raw_imu = args.raw_imu)
 
         if args.calibration:
             out_path = osp.join(result_dir, 'calibration.yaml')

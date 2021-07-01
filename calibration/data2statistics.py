@@ -31,11 +31,13 @@ def camera_stats(proto, result_path):
 
     }
     time_ns = []
+    frame_nbr = []
 
 
     # Generate stats from video frame data
     for i,frame_data in enumerate(proto.video_meta):
         time_ns.append(frame_data.time_ns)
+        frame_nbr.append(frame_data.frame_number)
 
         for stat, stat_list in scalar_stats.items():
             stat_list.append(getattr(frame_data, stat))
@@ -47,11 +49,18 @@ def camera_stats(proto, result_path):
 
 
     # Plot timestamp diff
-    ax[-1].set_title("Timestamp diff [ms]")
+    ax[-1].set_title("Timestamp diff [ms] vs frame nbr diff")
     time_ms = np.array(time_ns)*1e-6
     diff = time_ms[1:] - time_ms[:-1]
-    ax[-1].plot(time_ns[1:], diff, '.-')
+    ax[-1].plot(time_ns[1:], diff, 'b.-')
     ax[-1].set_xlabel('Timestamp [ns]')
+    ax[-1].set_ylabel('Diff [ms]')
+
+    ax2 = ax[-1].twinx()
+    frame_nbr = np.array(frame_nbr, np.int)
+    fnbr_diff = frame_nbr[1:] - frame_nbr[:-1]
+    ax2.plot(time_ns[1:], fnbr_diff, 'r.--')
+    ax2.set_ylabel('Diff [int]')
     fig.tight_layout()
     plt.savefig(osp.join(result_path, 'video_meta.svg'))
 
@@ -83,39 +92,59 @@ def ois_stats(proto, result_path):
 
 
 def imu_stats(proto, result_path):
-    scalar_stats = {
-        'gyro_accuracy': [],
-        'accel_accuracy': [],
-    }
-    xyz_stats = {
-        'accel': [[],[],[]],
-        'gyro': [[],[],[]],
-    }
+    scalar_stats = [
+        ('gyro_accuracy', []),
+        ('accel_accuracy', []),
+    ]
+    xyz_stats = [
+        ('accel', [[],[],[]]),
+        ('gyro', [[],[],[]]),
+    ]
+    bias_xyz_stats = [
+        ('accel_bias', [[],[],[]]),
+        ('gyro_drift', [[],[],[]]),
+    ]
     time_ns = []
 
     # Generate stats from video frame data
     for i,frame_data in enumerate(proto.imu):
         time_ns.append(frame_data.time_ns)
 
-        for stat, stat_list in scalar_stats.items():
+        for stat, stat_list in scalar_stats:
             stat_list.append(getattr(frame_data, stat))
 
-        for stat, xyz_list in xyz_stats.items():
+        for stat, xyz_list in xyz_stats:
+            xyz = getattr(frame_data, stat)
+            for i, d in enumerate(xyz):
+                xyz_list[i].append(d)
+
+        for stat, xyz_list in bias_xyz_stats:
             xyz = getattr(frame_data, stat)
             for i, d in enumerate(xyz):
                 xyz_list[i].append(d)
 
     nbr_plots = len(scalar_stats) + 3*len(xyz_stats)
     fig,ax = plt.subplots(nbr_plots, 1, sharex='all', figsize=FIG_SIZE)
-    for i, (stat, stat_list) in enumerate(scalar_stats.items()):
+    for i, (stat, stat_list) in enumerate(scalar_stats):
         ax[i].set_title(stat)
         ax[i].plot(time_ns, stat_list, '.-')
 
-    for i, (stat, stat_list) in enumerate(xyz_stats.items()):
+    for i, (stat, stat_list) in enumerate(xyz_stats):
         j = 3*i + len(scalar_stats)
-        for k, d in enumerate(stat_list):
+        xyz = np.array(stat_list)
+        xyz_bias = np.array(bias_xyz_stats[i][1])
+        for k, (d, d_bias) in enumerate(zip(xyz, xyz_bias)):
             ax[k+j].set_title('{}_{}'.format(stat, k))
-            ax[k+j].plot(time_ns, d, '.-')
+            ax[k+j].set_ylabel(stat)
+            ax[k+j].plot(time_ns, d, 'b.-')
+            ax[k+j].plot(time_ns, d-d_bias, 'r.-')
+
+    # for i, (stat, stat_list) in enumerate(twin_xyz_stats):
+    #     j = 3*i + len(scalar_stats)
+    #     for k, d in enumerate(stat_list):
+    #         my_ax = ax[k+j].twinx()
+    #         my_ax.plot(time_ns, d, 'r.--')
+    #         my_ax.set_ylabel(stat)
 
     ax[-1].set_xlabel('Timestamp')
     fig.tight_layout()

@@ -38,8 +38,8 @@ RUN pip install --upgrade pip && \
 		protobuf \
 		pyquaternion
 
-VOLUME data
-VOLUME host_home
+VOLUME /data
+VOLUME /host_home
 
 #Make workspace and copy scripts
 RUN mkdir calibration
