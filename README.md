@@ -31,5 +31,26 @@ To install on your Android device go to the [Release page](https://github.com/Da
 # Calibration
 To use the data for 3D reconstruction you will need to calibrate the IMU and Camera, see [Calibration README](calibration/README.md) for help.
 
+# Read Protobuf File
+Examples on python scripts reading the protobuf file can be found the the [calibration](calibration) folder, for example [data2statistics.py](calibration/data2statistics.py). You need `protoc` to compile a python module first, this is already done in the calibration docker image.
+You may compile it yourself like this
+```bash
+#Install protoc
+wget -nv "https://github.com/protocolbuffers/protobuf/releases/download/v3.13.0/protoc-3.13.0-linux-x86_64.zip" -O protoc.zip &&\  
+sudo unzip protoc.zip -d /usr/local &&\
+rm protoc.zip
+
+#Build module
+mkdir proto_python 
+protoc --python_out=proto_python protobuf/recording.proto
+export PYTHONPATH="/proto_python:${PYTHONPATH}"
+
+# Other Python dependencies
+pip3 install protobuf pyquaternion
+
+#Run script
+python3 calibration/data2statistics.py <datafolder>/<datetime>/video_meta.pb3
+```
+
 # Feedback
 If you find any bugs or have feature requests, please create an [issue](https://github.com/DavidGillsjo/VideoIMUCapture-Android/issues) on this Github page.
