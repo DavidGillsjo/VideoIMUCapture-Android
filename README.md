@@ -35,15 +35,23 @@ To use the data for 3D reconstruction you will need to calibrate the IMU and Cam
 Examples on python scripts reading the protobuf file can be found the the [calibration](calibration) folder, for example [data2statistics.py](calibration/data2statistics.py). You need `protoc` to compile a python module first, this is already done in the calibration docker image.
 You may compile it yourself like this
 ```bash
+#Go to git repo
+cd <some_path>/VideoIMUCapture-Android
+
 #Install protoc
 wget -nv "https://github.com/protocolbuffers/protobuf/releases/download/v3.13.0/protoc-3.13.0-linux-x86_64.zip" -O protoc.zip &&\  
 sudo unzip protoc.zip -d /usr/local &&\
 rm protoc.zip
 
-#Build module
+# Build module - Alternative  1
+# Add to pythonpath
 mkdir proto_python 
 protoc --python_out=proto_python protobuf/recording.proto
-export PYTHONPATH="/proto_python:${PYTHONPATH}"
+export PYTHONPATH="$(pwd)/proto_python:${PYTHONPATH}"
+
+# Build module - Alternative  2
+# Just place the parser in your own project.
+protoc --python_out=<your_project_dir> protobuf/recording.proto
 
 # Other Python dependencies
 pip3 install protobuf pyquaternion
