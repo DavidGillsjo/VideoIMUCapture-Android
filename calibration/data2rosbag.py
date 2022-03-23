@@ -35,6 +35,8 @@ def convert_to_bag(proto, video_path, result_path, subsample=1, compress_img=Fal
             # Generate images from video and frame data
             for i,frame_data in enumerate(proto.video_meta):
                 ret, frame = cap.read()
+                if not i==frame_data.frame_nbr:
+                    print('skipping frame {}, missing data'.format(i))
 
                 if (i % subsample) == 0:
                     rosimg, timestamp, resolution = img_to_rosimg(frame,
