@@ -35,7 +35,7 @@ def convert_to_bag(proto, video_path, result_path, subsample=1, compress_img=Fal
             # Generate images from video and frame data
             for i,frame_data in enumerate(proto.video_meta):
                 ret, frame = cap.read()
-                if not i==frame_data.frame_nbr:
+                if not i==frame_data.frame_number:
                     print('skipping frame {}, missing data'.format(i))
 
                 if (i % subsample) == 0:
