@@ -14,7 +14,6 @@ from data2rosbag import convert_to_bag
 
 
 def create_camera_yaml(proto, camera_yaml_path, matlab_calibration=None):
-    assert proto.camera_meta.intrinsic_params[4] == 0
     c = proto.camera_meta
     est_focal_length = proto.video_meta[0].est_focal_length_pix
     q = Quaternion(c.lens_pose_rotation[3], *c.lens_pose_rotation[:3])
@@ -25,7 +24,14 @@ def create_camera_yaml(proto, camera_yaml_path, matlab_calibration=None):
     P[:3,3] = -np.matmul(q.rotation_matrix,c.lens_pose_translation)
     print("P")
     print(P)
-    print('Estimated Focal Length: {}, Supplied: {}'.format(est_focal_length, c.intrinsic_params[:2]))
+    if c.intrinsic_params:
+        assert proto.camera_meta.intrinsic_params[4] == 0
+        intrinsics = c.intrinsic_params[:4]
+        print('Estimated Focal Length: {}, Supplied: {}'.format(est_focal_length, c.intrinsic_params[:2]))
+    else:
+        intrinsics = []
+
+
 
     if matlab_calibration:
         with open(matlab_calibration, 'r') as f:
@@ -34,7 +40,6 @@ def create_camera_yaml(proto, camera_yaml_path, matlab_calibration=None):
             radial_dist = next(csvreader)
             tangential_dist = next(csvreader)
     else:
-        intrinsics = c.intrinsic_params[:4]
         if c.distortion_params:
             radial_dist = list(c.distortion_params[:2])
             tangential_dist = list(c.distortion_params[3:])
