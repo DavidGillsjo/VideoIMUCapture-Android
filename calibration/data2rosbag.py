@@ -17,6 +17,9 @@ import yaml
 from utils import OpenCVDumper
 import time
 
+class VideoFinishedException(Exception):
+    pass
+
 bridge = CvBridge()
 NSECS_IN_SEC=long(1e9)
 
@@ -33,17 +36,40 @@ def convert_to_bag(proto, video_path, result_path, subsample=1, compress_img=Fal
             cap = cv2.VideoCapture(video_path)
 
             # Generate images from video and frame data
-            for i,frame_data in enumerate(proto.video_meta):
-                ret, frame = cap.read()
-                if not i==frame_data.frame_number:
-                    print('skipping frame {}, missing data'.format(i))
+            for frame_data in proto.video_meta:
 
-                if (i % subsample) == 0:
-                    rosimg, timestamp, resolution = img_to_rosimg(frame,
-                                                                  frame_data.time_ns,
-                                                                  compress=compress_img,
-                                                                  resize = resize)
-                    bag.write(img_topic, rosimg, timestamp)
+                # Read video frames until we find correct number
+                while  True:
+                    video_frame_idx = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
+                    ret, frame = cap.read()
+                    if not ret:
+                        raise VideoFinishedException()
+
+                    if video_frame_idx==frame_data.frame_number and (video_frame_idx % subsample) == 0:
+                        # Correct frame and subsample index
+                        rosimg, timestamp, resolution = img_to_rosimg(frame,
+                                                                      frame_data.time_ns,
+                                                                      compress=compress_img,
+                                                                      resize = resize)
+                        bag.write(img_topic, rosimg, timestamp)
+
+                        # Go to next data frame
+                        break
+
+                    elif video_frame_idx==frame_data.frame_number:
+                        #Skipping subsample
+                        break
+
+                    elif video_frame_idx < frame_data.frame_number:
+                        print('skipping frame {}, missing data'.format(video_frame_idx))
+
+                    else:
+                        raise NotImplementedError('Missing video frame idx is not supported and not expected. \
+                                                  Video frame idx {} > frame_data.frame_number {}'.format(video_frame_idx, frame_data.frame_number))
+
+        except VideoFinishedException:
+            # Nothing to worry about, video stream ended.
+            pass
 
         finally:
             cap.release()
