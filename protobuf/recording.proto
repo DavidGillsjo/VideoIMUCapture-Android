@@ -81,11 +81,12 @@ message IMUInfo {
   float gyro_resolution = 2;
   string accel_info = 3;
   float accel_resolution = 4;
-  string mag_info = 5;
-  float mag_resolution = 6;
+  float sample_frequency = 5; //Hz
+  repeated float placement = 6;
 
-  float sample_frequency = 7; //Hz
-  repeated float placement = 8;
+  // added for magnetometer support
+  string mag_info = 7;
+  float mag_resolution = 8;
 }
 
 message IMUData {
@@ -94,20 +95,19 @@ message IMUData {
   repeated float gyro_drift = 3;
   repeated float accel = 4;
   repeated float accel_bias = 5;
-  repeated float mag = 6;
-  repeated float mag_bias = 7;
-
   enum Accuracy {
     UNRELIABLE=0;
     LOW = 1;
     MEDIUM = 2;
     HIGH = 3;
   }
-  Accuracy gyro_accuracy = 8;
-  Accuracy accel_accuracy = 9;
-  Accuracy mag_accuracy = 10;
-  
+  Accuracy gyro_accuracy = 6;
+  Accuracy accel_accuracy = 7;
 
+  // added for magnetometer support
+  repeated float mag = 8;
+  repeated float mag_bias = 9;
+  Accuracy mag_accuracy = 10;
 }
 
 message VideoCaptureData {
@@ -117,7 +117,6 @@ message VideoCaptureData {
 
   repeated IMUData imu = 4;
   repeated VideoFrameMetaData video_meta = 5;
-
 }
 
 message MessageWrapper {
