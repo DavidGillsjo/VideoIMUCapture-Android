@@ -129,7 +129,7 @@ public class IMUManager extends SensorEventCallback {
         }
 
         // Remove the current element from the iterator and the list.
-        for (Iterator<SensorPacket> iterator = mAccelData.iterator(); iterator.hasNext(); ) {
+        for (Iterator<SensorPacket> iterator = queue.iterator(); iterator.hasNext(); ) {
             SensorPacket packet = iterator.next();
             if (packet.timestamp < left.timestamp) {
                 iterator.remove();
