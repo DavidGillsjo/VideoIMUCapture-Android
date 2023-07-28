@@ -336,19 +336,19 @@ public class CameraCaptureFragment extends Fragment
 
     public void updateCaptureResultPanel(
             final Float fl,
-            final Long exposureTimeNs) {
+            final Long exposureTimeNs,
+            final String timestampSourceStr) {
         final String sfl = String.format(Locale.getDefault(), "FL: %.3f", fl);
         final String sexpotime =
                 exposureTimeNs == null ?
                         "null ms" :
                         String.format(Locale.getDefault(), "Exp: %.2f ms",
                                 exposureTimeNs / 1000000.0);
-        final String imuHz = String.format(Locale.getDefault(),  "IMU: %.0fHz",
+        final String imuHz = String.format(Locale.getDefault(), "IMU: %.0fHz",
                 getmImuManager().getSensorFrequency());
-
         getActivity().runOnUiThread(() -> {
             if (mCaptureResultText != null) {
-                mCaptureResultText.setText("|" + sfl + "|" + sexpotime + "|" + imuHz + "|");
+                mCaptureResultText.setText("|" + sfl + "|" + sexpotime + "|" + imuHz + "|" + timestampSourceStr + "|" );
             }
         });
     }

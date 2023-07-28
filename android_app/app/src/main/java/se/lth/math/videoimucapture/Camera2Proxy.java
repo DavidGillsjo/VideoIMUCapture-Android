@@ -339,8 +339,13 @@ public class Camera2Proxy {
                     if (mRecordingMetadata) {
                         writeCaptureData(result, focal_length_pix);
                     }
+                    Integer timestamp_source = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE);
+                    String timestamp_source_str = "UNKNOWN";
+                    if (timestamp_source == 1) {
+                        timestamp_source_str = "REALTIME";
+                    }
                     ((CameraCaptureActivity) mActivity).getmCameraCaptureFragment()
-                            .updateCaptureResultPanel(focal_length_pix, exposureTimeNs);
+                            .updateCaptureResultPanel(focal_length_pix, exposureTimeNs, timestamp_source_str);
                 }
 
                 @Override
