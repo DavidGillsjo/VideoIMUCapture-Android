@@ -341,7 +341,7 @@ public class Camera2Proxy {
                     }
                     Integer timestamp_source = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE);
                     String timestamp_source_str = "UNKNOWN";
-                    if (timestamp_source == 1) {
+                    if (timestamp_source == CameraMetadata.SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME) {
                         timestamp_source_str = "REALTIME";
                     }
                     ((CameraCaptureActivity) mActivity).getmCameraCaptureFragment()
